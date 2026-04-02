@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import Button from './ui/Button'
 import api from '../utils/api'
+import { useAuth } from '../contexts/AuthContext'
 
 const boxStyle = {
   width: 44,
@@ -12,11 +13,12 @@ const boxStyle = {
   border: '1px solid var(--color-muted)',
 }
 
-export default function VerificationModal({ email, onClose }){
+export default function VerificationModal({ email, password, autoLogin = false, onClose }){
   const [values, setValues] = useState(Array(6).fill(''))
   const inputs = useRef([])
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState(null)
+  const auth = useAuth()
 
   useEffect(()=>{ if(inputs.current[0]) inputs.current[0].focus() }, [])
 
@@ -34,8 +36,14 @@ export default function VerificationModal({ email, onClose }){
     setLoading(true); setMsg(null)
     try{
       await api.verifyCode(email, code)
-      setMsg('Email verified — you can sign in now.')
-      setTimeout(()=> onClose && onClose(true), 800)
+      if(autoLogin && email && password){
+        await auth.login({ email, password })
+        setMsg('Email verified. Redirecting to dashboard...')
+        setTimeout(()=> onClose && onClose({ verified: true, loggedIn: true }), 500)
+      } else {
+        setMsg('Email verified — you can sign in now.')
+        setTimeout(()=> onClose && onClose({ verified: true, loggedIn: false }), 800)
+      }
     }catch(err){
       setMsg(err.payload?.message || err.message || 'Verification failed')
     }finally{ setLoading(false) }
@@ -74,12 +82,12 @@ export default function VerificationModal({ email, onClose }){
 
         {/* no full-token paste in production UI; rely on email delivery and 6-box input */}
 
-        {msg && <div style={{color:'#d14343',marginTop:12}}>{msg}</div>}
+        {msg && <div style={{color:/verified|redirecting|resent/i.test(msg) ? '#17693a' : '#d14343',marginTop:12}}>{msg}</div>}
 
         <div style={{display:'flex',gap:12,marginTop:16,justifyContent:'flex-end'}}>
           <Button onClick={handleResend} disabled={loading} className="btn-ghost">Resend verification</Button>
           <Button onClick={handleVerify} disabled={loading} className="btn-primary">{loading ? 'Working...' : 'Verify'}</Button>
-          <Button onClick={()=>onClose && onClose(false)}>Close</Button>
+          <Button onClick={()=>onClose && onClose({ verified: false, loggedIn: false })}>Close</Button>
         </div>
       </div>
     </div>

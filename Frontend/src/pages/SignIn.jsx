@@ -57,7 +57,13 @@ export default function SignIn(){
           {error && <div className="auth-page-error">{error}</div>}
 
           {showVerify && (
-            <VerificationModal email={verifyEmailAddr} onClose={(ok)=>{ setShowVerify(false); if(ok) navigate('/signin') }} />
+            <VerificationModal
+              email={verifyEmailAddr}
+              onClose={(result)=>{
+                setShowVerify(false)
+                if(result?.verified) navigate('/signin')
+              }}
+            />
           )}
 
           <div className="auth-page-row">

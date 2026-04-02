@@ -57,7 +57,21 @@ export default function Signup(){
           <p className="auth-page-footnote">Already have an account? <Link to="/signin">Sign in</Link></p>
         </form>
       </div>
-      {showVerify && <VerificationModal email={registeredEmail} onClose={(ok)=>{ setShowVerify(false); if(ok) navigate('/signin') }} />}
+      {showVerify && (
+        <VerificationModal
+          email={registeredEmail}
+          password={password}
+          autoLogin
+          onClose={(result)=>{
+            setShowVerify(false)
+            if(result?.loggedIn) {
+              navigate('/dashboard')
+              return
+            }
+            if(result?.verified) navigate('/signin')
+          }}
+        />
+      )}
     </div>
   )
 }
