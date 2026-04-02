@@ -63,7 +63,7 @@ export default function Foods(){
               <p className="muted">{isHindi ? 'नाम से खोजकर कैलोरी, मैक्रो, कैल्शियम और विटामिन देखें।' : 'Search by food name to preview calories, macros, calcium, and vitamins.'}</p>
             </div>
           </div>
-          <FoodSearch onSelect={(food) => setSelected(food)} />
+          <FoodSearch foods={foods} onSelect={(food) => setSelected(food)} />
 
           {selected ? (
             <div className="food-detail-panel">

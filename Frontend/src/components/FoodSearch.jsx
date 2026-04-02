@@ -1,34 +1,23 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import Input from './ui/Input'
 import * as api from '../utils/api'
 import { useLanguage } from '../contexts/LanguageContext'
 
-export default function FoodSearch({ onSelect, placeholder = 'Search foods...' }){
+export default function FoodSearch({ onSelect, placeholder = 'Search foods...', foods = [] }){
   const { language } = useLanguage()
   const isHindi = language === 'hi'
   const [q, setQ] = useState('')
   const [results, setResults] = useState([])
-  const [allFoods, setAllFoods] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    let active = true
-
-    api.getAllFoods()
-      .then((res) => {
-        if (!active) return
-        setAllFoods(Array.isArray(res?.data) ? res.data : [])
-      })
-      .catch(() => {
-        if (!active) return
-        setAllFoods([])
-      })
-
-    return () => {
-      active = false
-    }
-  }, [])
+  const indexedFoods = useMemo(() => {
+    if (!Array.isArray(foods)) return []
+    return foods.map((food) => ({
+      item: food,
+      term: `${String(food?.name || '').toLowerCase()} ${String(food?.nameHindi || '').toLowerCase()}`,
+    }))
+  }, [foods])
 
   useEffect(() => {
     if (!q || q.trim().length < 1) {
@@ -43,12 +32,9 @@ export default function FoodSearch({ onSelect, placeholder = 'Search foods...' }
       setError('')
 
       const term = q.trim().toLowerCase()
-      const localMatches = allFoods
-        .filter((food) => {
-          const en = (food?.name || '').toLowerCase()
-          const hi = (food?.nameHindi || '').toLowerCase()
-          return en.includes(term) || hi.includes(term)
-        })
+      const localMatches = indexedFoods
+        .filter((entry) => entry.term.includes(term))
+        .map((entry) => entry.item)
         .slice(0, 10)
 
       if (active && localMatches.length) {
@@ -56,6 +42,13 @@ export default function FoodSearch({ onSelect, placeholder = 'Search foods...' }
       }
 
       try {
+        // Avoid unnecessary network roundtrips when local index already fills suggestions.
+        if (localMatches.length >= 10 || term.length < 2) {
+          setResults(localMatches)
+          setLoading(false)
+          return
+        }
+
         const res = await api.searchFoods(q.trim())
         if (!active) return
         const remote = Array.isArray(res?.data) ? res.data : []
@@ -82,13 +75,13 @@ export default function FoodSearch({ onSelect, placeholder = 'Search foods...' }
       } finally {
         if (active) setLoading(false)
       }
-    }, 200)
+    }, 250)
 
     return () => {
       active = false
       clearTimeout(t)
     }
-  }, [q, allFoods])
+  }, [q, indexedFoods, isHindi])
 
   const handleSelect = (food) => {
     if (onSelect) onSelect(food)

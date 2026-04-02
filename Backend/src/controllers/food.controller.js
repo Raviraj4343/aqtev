@@ -5,8 +5,15 @@ import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiError.js";
 
 const escapeRegex = (text = "") => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const normalizeTerm = (text = "") => String(text).toLowerCase().trim();
 const CACHE_TTL_MS = 2 * 60 * 1000;
 const responseCache = new Map();
+
+const STATIC_FOODS = Array.isArray(FoodData) ? FoodData : [];
+const STATIC_SEARCH_INDEX = STATIC_FOODS.map((item) => ({
+  item,
+  searchText: `${normalizeTerm(item?.name)} ${normalizeTerm(item?.nameHindi)}`,
+}));
 
 const getCache = (key) => {
   const cached = responseCache.get(key);
@@ -43,8 +50,9 @@ const boostRules = {
   },
 };
 
-const filterStaticFoods = ({ diet, category, q }) => {
-  let items = FoodData;
+const filterStaticFoods = ({ diet, category, q, limit }) => {
+  const term = normalizeTerm(q);
+  let items = STATIC_FOODS;
 
   if (diet === "veg") {
     items = items.filter((item) => item.dietType === "veg");
@@ -54,13 +62,22 @@ const filterStaticFoods = ({ diet, category, q }) => {
     items = items.filter((item) => item.category === category);
   }
 
-  if (q) {
-    const term = q.toLowerCase();
-    items = items.filter((item) => {
-      const name = String(item.name || "").toLowerCase();
-      const nameHindi = String(item.nameHindi || "").toLowerCase();
-      return name.includes(term) || nameHindi.includes(term);
-    });
+  if (term) {
+    const matched = STATIC_SEARCH_INDEX
+      .filter((entry) => entry.searchText.includes(term))
+      .map((entry) => entry.item);
+
+    const categoryFiltered = category
+      ? matched.filter((item) => item.category === category)
+      : matched;
+
+    items = diet === "veg"
+      ? categoryFiltered.filter((item) => item.dietType === "veg")
+      : categoryFiltered;
+  }
+
+  if (limit && Number(limit) > 0) {
+    return items.slice(0, Number(limit));
   }
 
   return items;
@@ -103,7 +120,8 @@ const dedupeFoodsByName = (foods = []) => {
 
 const getAllFoods = asyncHandler(async (req, res) => {
   const { diet, category } = req.query;
-  const cacheKey = `all:${diet || "all"}:${category || "all"}`;
+  const limit = Math.max(0, Math.min(2000, Number(req.query.limit) || 0));
+  const cacheKey = `all:${diet || "all"}:${category || "all"}:${limit || "all"}`;
   const cached = getCache(cacheKey);
 
   if (cached) {
@@ -128,11 +146,19 @@ const getAllFoods = asyncHandler(async (req, res) => {
     filter.category = category;
   }
 
-  let foods = await Food.find(filter).sort({ category: 1, name: 1 }).lean();
+  let dbQuery = Food.find(filter)
+    .sort({ category: 1, name: 1 })
+    .lean();
+
+  if (limit > 0) {
+    dbQuery = dbQuery.limit(limit);
+  }
+
+  let foods = await dbQuery;
 
   // Fallback for environments where seeding has not run yet.
   if (!foods.length) {
-    foods = filterStaticFoods({ diet, category });
+    foods = filterStaticFoods({ diet, category, limit });
   }
 
   setCache(cacheKey, foods);
@@ -146,12 +172,15 @@ const getAllFoods = asyncHandler(async (req, res) => {
 
 const searchFoods = asyncHandler(async (req, res) => {
   const { q } = req.query;
-  if (!q || q.trim().length < 1) {
+  const term = String(q || "").trim();
+  if (!term || term.length < 1) {
     throw new ApiError(400, "Search query is required.");
   }
 
-  const term = q.trim();
-  const cacheKey = `search:${term.toLowerCase()}`;
+  const limit = Math.max(1, Math.min(20, Number(req.query.limit) || 10));
+  const safeTerm = term.slice(0, 64);
+
+  const cacheKey = `search:${safeTerm.toLowerCase()}:${limit}`;
   const cached = getCache(cacheKey);
 
   if (cached) {
@@ -161,7 +190,7 @@ const searchFoods = asyncHandler(async (req, res) => {
       .json(new ApiResponse(200, cached, "Search results."));
   }
 
-  const safeRegex = new RegExp(escapeRegex(term), "i");
+  const safeRegex = new RegExp(escapeRegex(safeTerm), "i");
 
   let foods = await Food.find({
     isActive: true,
@@ -170,14 +199,14 @@ const searchFoods = asyncHandler(async (req, res) => {
       { nameHindi: safeRegex },
     ],
   })
-    .limit(10)
+    .limit(limit)
     .lean()
     .select(
       "name nameHindi unit caloriesPerUnit proteinPerUnit carbsPerUnit fatsPerUnit fiberPerUnit calciumPerUnit vitamins category dietType"
     );
 
   if (!foods.length) {
-    foods = filterStaticFoods({ q: term }).slice(0, 10);
+    foods = filterStaticFoods({ q: safeTerm, limit });
   }
 
   setCache(cacheKey, foods);
