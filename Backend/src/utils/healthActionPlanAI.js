@@ -1,23 +1,24 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const ONE_FIVE_CANDIDATES = [
+const MODEL_CANDIDATES = [
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
   "gemini-1.5-flash",
   "gemini-1.5-flash-latest",
   "gemini-1.5-flash-002",
 ];
 
 const getModelCandidates = () => {
-  // Force 1.5-family models only to avoid 2.0 quota failures.
-  const configured = String(process.env.HEALTH_MODEL || "gemini-1.5-flash").trim();
-  const normalized = configured.toLowerCase();
-  const effective = normalized.includes("1.5") ? configured : "gemini-1.5-flash";
-  return [effective, ...ONE_FIVE_CANDIDATES.filter((name) => name !== effective)];
+  const configured = String(process.env.HEALTH_MODEL || process.env.GEMINI_MODEL || "gemini-2.0-flash").trim();
+  return [configured, ...MODEL_CANDIDATES.filter((name) => name !== configured)];
 };
 
 const getGeminiApiKey = () => {
-  const key = String(process.env.GEMINI_API_KEY || process.env.HEALTH_API || "").trim();
+  const key = String(
+    process.env.GUIDE_API_KEY || process.env.GEMINI_API_KEY || process.env.HEALTH_API || ""
+  ).trim();
   if (!key) {
-    throw new Error("GEMINI_API_KEY is missing in environment variables.");
+    throw new Error("GUIDE_API_KEY (or GEMINI_API_KEY) is missing in environment variables.");
   }
   return key;
 };
@@ -171,6 +172,36 @@ const normalizePlan = (parsed) => {
   };
 };
 
+const generateActionPlanPrompt = (model, prompt) =>
+  model.generateContent({
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    generationConfig: {
+      responseMimeType: "application/json",
+      temperature: 0.5,
+    },
+  });
+
+const attemptPlanGeneration = async (model, payload) => {
+  const primaryPrompt = buildPrompt(payload);
+  const primaryResult = await generateActionPlanPrompt(model, primaryPrompt);
+  const firstText = String(primaryResult?.response?.text?.() || "").trim();
+  if (!firstText) {
+    throw new Error("Empty response from model");
+  }
+
+  try {
+    return normalizePlan(safeJsonParse(firstText));
+  } catch {
+    const repairPrompt = `Return ONLY valid JSON for this schema, with 2 to 4 concise items in each array:\n\n{\n  "actionPlan": ["..."],\n  "riskFlags": ["..."],\n  "nutritionFocus": ["..."],\n  "trainingFocus": ["..."],\n  "recoveryFocus": ["..."]\n}\n\nUse this user context to regenerate recommendations:\n${buildPrompt(payload)}\n\nDo not include markdown, explanation, or extra keys.`;
+    const repairResult = await generateActionPlanPrompt(model, repairPrompt);
+    const repairText = String(repairResult?.response?.text?.() || "").trim();
+    if (!repairText) {
+      throw new Error("Empty response from model");
+    }
+    return normalizePlan(safeJsonParse(repairText));
+  }
+};
+
 const generateGuideLiveSuggestion = async (payload) => {
   const apiKey = getGeminiApiKey();
 
@@ -289,39 +320,42 @@ const generateRealtimeActionPlan = async (payload) => {
   const apiKey = getGeminiApiKey();
 
   const client = new GoogleGenerativeAI(apiKey);
-  const prompt = buildPrompt(payload);
 
   let lastError = null;
-  let text = "";
+  let plan = null;
 
   for (const modelName of getModelCandidates()) {
     try {
       const model = client.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      text = String(result?.response?.text?.() || "");
-      if (text.trim()) {
-        console.info(`[HEALTH_AI] Action plan model selected: ${modelName}`);
-        break;
-      }
+      plan = await attemptPlanGeneration(model, payload);
+      console.info(`[HEALTH_AI] Action plan model selected: ${modelName}`);
+      break;
     } catch (err) {
-      lastError = wrapGeminiError(err, modelName);
       const message = String(err?.message || "").toLowerCase();
       const isModelLookupError =
         message.includes("model") &&
         (message.includes("not found") || message.includes("not supported"));
-      if (!isModelLookupError) {
-        throw lastError;
+      const isStructuredOutputError =
+        message.includes("invalid json") ||
+        message.includes("insufficient items") ||
+        message.includes("empty response");
+
+      if (isModelLookupError || isStructuredOutputError) {
+        lastError = err;
+        continue;
       }
+
+      lastError = wrapGeminiError(err, modelName);
+      throw lastError;
     }
   }
 
-  if (!text.trim()) {
-    if (lastError) throw lastError;
-    throw new Error("Empty response from model");
+  if (!plan) {
+    if (lastError?.statusCode) throw lastError;
+    throw new Error(lastError?.message || "Unable to generate action plan from model output");
   }
 
-  const parsed = safeJsonParse(text);
-  return normalizePlan(parsed);
+  return plan;
 };
 
 export { generateRealtimeActionPlan, generateGuideLiveSuggestion };

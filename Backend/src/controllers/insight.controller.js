@@ -14,6 +14,133 @@ import { generateRealtimeActionPlan, generateGuideLiveSuggestion } from "../util
 const getTodayIST = () =>
   new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
+const compactUnique = (list = []) => {
+  const seen = new Set();
+  return list
+    .map((item) => String(item || "").trim())
+    .filter((item) => {
+      if (!item) return false;
+      const key = item.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+};
+
+const ensureMinItems = (list = [], fill = [], min = 2, max = 4) => {
+  const merged = compactUnique([...list, ...fill]);
+  return merged.slice(0, Math.max(min, Math.min(max, merged.length)));
+};
+
+const buildDerivedActionPlan = ({
+  user,
+  activeGoal,
+  totals,
+  requiredCalories,
+  requiredProtein,
+  calorieGap,
+  proteinGap,
+  bmiCategory,
+}) => {
+  const userObj = typeof user?.toObject === "function" ? user.toObject() : user;
+  const report = computeHealthReport({ ...userObj, goal: activeGoal }, totals);
+
+  const actionPlan = ensureMinItems(
+    [
+      calorieGap > 0
+        ? `Add around ${Math.round(calorieGap)} kcal using balanced whole-food meals today.`
+        : `Calories are on target (${totals.totalCalories}/${requiredCalories} kcal). Keep consistency.`,
+      proteinGap > 0
+        ? `Close about ${Math.round(proteinGap)}g protein gap with high-protein foods.`
+        : `Protein goal met (${Math.round(totals.totalProtein)}g/${requiredProtein}g). Maintain this pattern.`,
+      totals.steps == null
+        ? "Start step tracking and target at least 7000 steps today."
+        : totals.steps < 7000
+          ? `Increase activity by about ${7000 - totals.steps} steps to reach 7000+ today.`
+          : `Great activity (${totals.steps} steps). Add a short post-meal walk.`,
+      totals.sleepHours == null
+        ? "Log sleep tonight and target 7 to 9 hours for better recovery."
+        : totals.sleepHours < 7
+          ? `Sleep is ${totals.sleepHours}h. Move bedtime earlier to reach at least 7h.`
+          : `Sleep looks solid (${totals.sleepHours}h). Keep your recovery routine steady.`,
+    ],
+    report?.suggestions || [],
+    3,
+    4
+  );
+
+  const riskFlags = ensureMinItems(
+    [
+      calorieGap > Math.max(250, requiredCalories * 0.15)
+        ? `Calorie intake is meaningfully below target today (${totals.totalCalories}/${requiredCalories} kcal).`
+        : "No major calorie risk detected from today's log.",
+      proteinGap > 20
+        ? `Protein shortfall is high (${Math.round(proteinGap)}g). Recovery may be limited.`
+        : "Protein intake is not showing major risk today.",
+      bmiCategory === "Overweight" || bmiCategory === "Obese"
+        ? `BMI category is ${bmiCategory}; keep nutrition and activity consistent.`
+        : "BMI trend risk is currently moderate from profile data.",
+    ],
+    report?.warnings || [],
+    2,
+    4
+  );
+
+  const nutritionFocus = ensureMinItems(
+    [
+      calorieGap > 0
+        ? `Prioritize nutrient-dense calories to close ${Math.round(calorieGap)} kcal gap.`
+        : "Keep current calorie quality and meal timing consistent.",
+      proteinGap > 0
+        ? `Add high-protein options to recover around ${Math.round(proteinGap)}g today.`
+        : "Protein distribution is on track; keep protein in each meal.",
+    ],
+    report?.insights || [],
+    2,
+    4
+  );
+
+  const trainingFocus = ensureMinItems(
+    [
+      totals.steps == null
+        ? "Track steps and build toward 7000 plus daily movement."
+        : totals.steps < 7000
+          ? `Use 2-3 short walks to move from ${totals.steps} to 7000+ steps.`
+          : `Keep step volume above 7000 and include light strength work.`,
+      activeGoal === "muscle_gain"
+        ? "Prioritize progressive strength sessions 3 times this week."
+        : "Maintain regular resistance sessions to support body composition.",
+    ],
+    report?.suggestions || [],
+    2,
+    4
+  );
+
+  const recoveryFocus = ensureMinItems(
+    [
+      totals.sleepHours == null
+        ? "Track sleep and aim for a consistent 7 to 9 hour window."
+        : totals.sleepHours < 7
+          ? `Raise sleep from ${totals.sleepHours}h toward at least 7h for recovery.`
+          : `Sleep duration is good at ${totals.sleepHours}h; protect this routine.`,
+      totals.waterIntake
+        ? `Hydration logged as ${totals.waterIntake}; spread water intake across the day.`
+        : "Hydration not logged today; target steady intake through the day.",
+    ],
+    report?.insights || [],
+    2,
+    4
+  );
+
+  return {
+    actionPlan,
+    riskFlags,
+    nutritionFocus,
+    trainingFocus,
+    recoveryFocus,
+  };
+};
+
 
 const getTodayInsight = asyncHandler(async (req, res) => {
   const user = req.user;
@@ -180,36 +307,18 @@ const getActionPlan = asyncHandler(async (req, res) => {
       dailyDiet,
       medicalConditions,
     });
-  } catch {
-    source = "fallback";
-    const report = computeHealthReport({ ...user.toObject(), goal: activeGoal }, totals);
-    const suggestions = (report.suggestions || []).map((s) => String(s)).filter(Boolean);
-    const warnings = (report.warnings || []).map((s) => String(s)).filter(Boolean);
-    const insights = (report.insights || []).map((s) => String(s)).filter(Boolean);
-
-    plan = {
-      actionPlan: [
-        suggestions[0] || "Anchor each meal with protein and vegetables.",
-        suggestions[1] || "Take two 10-minute walks after main meals.",
-        suggestions[2] || "Log sleep and hydration daily for better guidance.",
-      ],
-      riskFlags: [
-        warnings[0] || "Calorie or protein target may be off-track today.",
-        warnings[1] || "Low sleep or low activity can reduce recovery quality.",
-      ],
-      nutritionFocus: [
-        insights[0] || "Close calorie gap with whole-food carbs and lean protein.",
-        insights[1] || "Add one high-protein snack to improve daily total.",
-      ],
-      trainingFocus: [
-        "Target 7000+ steps with short post-meal walks.",
-        "Do beginner strength training three times weekly.",
-      ],
-      recoveryFocus: [
-        "Aim for seven to nine hours of sleep.",
-        "Hydrate steadily across the day, not only at night.",
-      ],
-    };
+  } catch (error) {
+    source = "derived";
+    plan = buildDerivedActionPlan({
+      user,
+      activeGoal,
+      totals,
+      requiredCalories,
+      requiredProtein,
+      calorieGap,
+      proteinGap,
+      bmiCategory,
+    });
   }
 
   return res.status(200).json(

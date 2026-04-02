@@ -78,110 +78,6 @@ const buildDietTags = (dailyDiet, meals) => {
   }
 }
 
-const buildRecommendations = ({
-  goal,
-  calorieGap,
-  proteinGap,
-  sleepHours,
-  steps,
-  medicalConditions,
-  dietSignals,
-  dietPreference
-}) => {
-  const conditionText = String(medicalConditions || '').toLowerCase()
-  const list = []
-
-  if (goal === 'weight_loss') {
-    list.push({
-      title: 'Diet focus',
-      body: calorieGap > 150
-        ? 'Tighten high-calorie extras first: sweet drinks, deep-fried snacks, and oversized dinner portions.'
-        : 'Keep meals structured around protein, vegetables, and controlled portions so the calorie deficit stays sustainable.'
-    })
-    list.push({
-      title: 'Exercise focus',
-      body: 'Aim for 3 strength sessions per week plus brisk walking on most days to protect muscle while reducing body fat.'
-    })
-  }
-
-  if (goal === 'muscle_gain') {
-    list.push({
-      title: 'Diet focus',
-      body: proteinGap > 0
-        ? 'Add a protein anchor to every meal and include a calorie-dense recovery snack after training.'
-        : 'Keep a steady calorie surplus with protein at every meal and a carb source around workouts.'
-    })
-    list.push({
-      title: 'Exercise focus',
-      body: 'Prioritize progressive overload: compound lifts, enough rest between hard sessions, and 7-9 hours of sleep.'
-    })
-  }
-
-  if (goal === 'maintain') {
-    list.push({
-      title: 'Diet focus',
-      body: 'Stay consistent with balanced plates, regular meal timing, and enough protein to support recovery and satiety.'
-    })
-    list.push({
-      title: 'Exercise focus',
-      body: 'Use a balanced mix of resistance work, mobility, and light cardio to keep energy, strength, and recovery stable.'
-    })
-  }
-
-  if (proteinGap > 12) {
-    list.push({
-      title: 'Protein upgrade',
-      body: dietPreference === 'veg'
-        ? 'Bring in paneer, Greek yogurt, dal, tofu, soy chunks, or whey to close the protein gap faster.'
-        : 'Use eggs, chicken, fish, Greek yogurt, paneer, or whey to close the protein gap efficiently.'
-    })
-  }
-
-  if (!dietSignals.hasFruitVeg) {
-    list.push({
-      title: 'Micronutrient support',
-      body: 'Add at least 2 servings of fruit and 2 servings of vegetables today to improve fiber, potassium, folate, and antioxidant intake.'
-    })
-  }
-
-  if (sleepHours !== undefined && sleepHours !== null && sleepHours < 7) {
-    list.push({
-      title: 'Lifestyle support',
-      body: 'Push bedtime earlier, reduce late-night screens, and keep caffeine earlier in the day to improve sleep quality and appetite control.'
-    })
-  }
-
-  if (steps !== undefined && steps !== null && steps < 7000) {
-    list.push({
-      title: 'Movement support',
-      body: 'Break walking into short blocks after meals. Two 10-minute walks can meaningfully improve daily activity and glucose control.'
-    })
-  }
-
-  if (conditionText.includes('diabetes') || conditionText.includes('prediabetes')) {
-    list.push({
-      title: 'Condition-aware note',
-      body: 'Favor high-fiber carbs, pair carbs with protein, and avoid long gaps between meals to support steadier blood sugar.'
-    })
-  }
-
-  if (conditionText.includes('thyroid')) {
-    list.push({
-      title: 'Condition-aware note',
-      body: 'Consistency matters. Keep protein adequate, avoid crash dieting, and follow your clinician guidance around medication timing.'
-    })
-  }
-
-  if (conditionText.includes('hypertension') || conditionText.includes('blood pressure')) {
-    list.push({
-      title: 'Condition-aware note',
-      body: 'Reduce packaged salty foods, use more potassium-rich produce, and keep hydration steady to support blood-pressure control.'
-    })
-  }
-
-  return list.slice(0, 3)
-}
-
 const getNutrientKey = (label = '') => {
   const text = String(label).toLowerCase()
   if (text.includes('protein')) return 'protein'
@@ -230,13 +126,20 @@ export default function Guide() {
 
     let cancelled = false
     const timer = setTimeout(async () => {
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+      const requestPlan = () => api.getGuideActionPlan({ goal: resolvedGoal })
+
       try {
-        const res = await api.getGuideActionPlan({
-          goal: resolvedGoal
-        })
+        let res = await requestPlan()
+        let plan = res?.data?.plan || null
+
+        if (!plan || !Array.isArray(plan?.actionPlan) || !plan.actionPlan.length) {
+          await wait(800)
+          res = await requestPlan()
+          plan = res?.data?.plan || null
+        }
 
         if (cancelled) return
-        const plan = res?.data?.plan || null
         setRealtimePlan(plan && typeof plan === 'object' ? plan : null)
       } catch {
         if (!cancelled) setRealtimePlan(null)
@@ -416,17 +319,6 @@ export default function Guide() {
       bmiScore + nutritionScore + activityScore + sleepScore + hydrationScore
     )
 
-    const recommendations = buildRecommendations({
-      goal: profile.goal,
-      calorieGap,
-      proteinGap,
-      sleepHours,
-      steps,
-      medicalConditions: '',
-      dietSignals,
-      dietPreference: profile.dietPreference
-    })
-
     return {
       bmi,
       calorieTarget,
@@ -438,7 +330,6 @@ export default function Guide() {
       steps,
       waterLabel: todayLog?.waterIntake || (isHindi ? 'लॉग नहीं हुआ' : 'Not logged'),
       nutrientGaps,
-      recommendations,
       score: clamp(baseScore, 0, 100)
     }
   }, [isHindi, resolvedGoal, todayLog, user])
@@ -500,17 +391,15 @@ export default function Guide() {
   const radarPolygon = radarPoints.map((point) => `${point.plot.x},${point.plot.y}`).join(' ')
   const activeRadarPoint = radarPoints[activeRadarIndex] || radarPoints[0] || null
   const aiActionPlan = Array.isArray(realtimePlan?.actionPlan) ? realtimePlan.actionPlan : []
-  const visibleRecommendations = aiActionPlan.length
-    ? aiActionPlan.map((text, index) => {
-      if (text && typeof text === 'object') {
-        return {
-          title: text.title || (isHindi ? `एक्शन ${index + 1}` : `Action ${index + 1}`),
-          body: text.body || ''
-        }
+  const visibleRecommendations = aiActionPlan.map((text, index) => {
+    if (text && typeof text === 'object') {
+      return {
+        title: text.title || (isHindi ? `एक्शन ${index + 1}` : `Action ${index + 1}`),
+        body: text.body || ''
       }
-      return { title: isHindi ? `एक्शन ${index + 1}` : `Action ${index + 1}`, body: String(text || '') }
-    })
-    : report.recommendations.map((item) => ({ title: item.title, body: item.body }))
+    }
+    return { title: isHindi ? `एक्शन ${index + 1}` : `Action ${index + 1}`, body: String(text || '') }
+  })
 
   const aiRiskFlags = Array.isArray(realtimePlan?.riskFlags) ? realtimePlan.riskFlags : []
   const aiNutritionFocus = Array.isArray(realtimePlan?.nutritionFocus) ? realtimePlan.nutritionFocus : []

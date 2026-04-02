@@ -203,12 +203,14 @@ a:hover{color:var(--color-accent);text-decoration:underline}
 .menu-btn{background:linear-gradient(145deg, rgba(14,116,144,0.22), rgba(16,185,129,0.18));border:1px solid rgba(14,116,144,0.26);font-size:21px;cursor:pointer;width:46px;height:46px;border-radius:14px;color:#075985;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 12px 24px rgba(11,31,36,0.08)}
 .search input{padding:10px 12px;border-radius:999px;border:1px solid rgba(15,23,42,0.06);background:var(--color-surface)}
 .topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-left,.topbar-right{min-width:0}
 .avatar{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:999px;background:linear-gradient(180deg,var(--color-primary),var(--color-primary-600));color:var(--color-surface);text-decoration:none;font-weight:600}
 
 /* Centered container for topbar content to align with main content */
 .topbar .container{width:100%;max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 var(--space-md)}
 .topbar .topbar-left{gap:16px}
 .topbar .topbar-right{min-height:44px}
+.topbrand .brand{white-space:nowrap}
 
 /* Topbar brand style */
 .topbar .brand{font-weight:800;font-size:18px;color:var(--color-primary);letter-spacing:0.2px}
@@ -233,11 +235,14 @@ a:hover{color:var(--color-accent);text-decoration:underline}
 /* Responsive logo behavior to avoid overflow */
 @media (max-width:800px){
   .app-logo{height:34px}
-  .brand-text{display:none}
+  .brand-text{display:inline-flex;font-size:15px}
+  .brand{gap:8px}
   .topbar .container{padding:0 12px}
 }
 @media (max-width:480px){
   .app-logo{height:28px}
+  .brand-text{font-size:14px}
+  .brand{gap:6px}
 }
 
 .content-area{padding:var(--space-md);min-height:calc(100vh - var(--topbar-height))}
@@ -788,13 +793,32 @@ a:hover{color:var(--color-accent);text-decoration:underline}
 
   /* Auth links on left of topbar */
   .auth-left{display:flex;align-items:center;gap:8px}
-  .nav-auth-link{color:var(--color-primary);font-weight:600;text-decoration:none;padding:8px 12px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;height:44px}
+  .nav-auth-link{color:var(--color-primary);font-weight:600;text-decoration:none;padding:8px 12px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;height:44px;white-space:nowrap}
   .nav-auth-link:hover{background:rgba(2,132,199,0.08)}
   .nav-guest-link{background:rgba(233,239,241,0.76);border:1px solid rgba(2,132,199,0.14);box-shadow:0 10px 24px rgba(11,31,36,0.05)}
-  .nav-lang-toggle{height:44px;min-width:56px;padding:0 12px;border-radius:12px;border:1px solid rgba(2,132,199,0.16);background:rgba(233,239,241,0.76);color:var(--color-primary);font-weight:800;font:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(11,31,36,0.05)}
+  .nav-lang-toggle{height:44px;min-width:56px;padding:0 12px;border-radius:12px;border:1px solid rgba(2,132,199,0.16);background:rgba(233,239,241,0.76);color:var(--color-primary);font-weight:800;font:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(11,31,36,0.05);white-space:nowrap}
   .nav-lang-toggle:hover{background:rgba(233,239,241,0.94)}
 
-  .topbar .btn-primary{margin-top:0;height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0 16px;border-radius:14px}
+  .topbar .btn-primary{margin-top:0;height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0 16px;border-radius:14px;white-space:nowrap}
+
+  @media (max-width:900px){
+    .topbar .container{padding:0 10px}
+    .topbar .topbar-left{gap:10px}
+    .topbar-right{gap:8px}
+    .nav-auth-link{height:40px;padding:0 10px;font-size:15px}
+    .nav-lang-toggle{height:40px;min-width:48px;padding:0 10px}
+    .topbar .btn-primary{height:40px;padding:0 12px;border-radius:12px;font-size:15px}
+  }
+
+  @media (max-width:640px){
+    .topbar{padding:6px 10px}
+    .topbar .container{padding:0 8px}
+    .topbar-right{gap:6px}
+    .topbrand .brand-text{font-size:14px}
+    .nav-auth-link{height:36px;padding:0 8px;font-size:14px}
+    .nav-lang-toggle{height:36px;min-width:42px;padding:0 8px;border-radius:10px}
+    .topbar .btn-primary{height:36px;padding:0 10px;border-radius:11px;font-size:14px}
+  }
 
   @media (max-width:800px){
     .auth-left{display:none}
