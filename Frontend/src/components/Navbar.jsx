@@ -23,7 +23,6 @@ export default function Navbar({ isSidebarOpen = false, onToggleSidebar }){
         <div className="topbar-right">
           {showAuthLinks ? (
             <>
-              <Link to="/guest-nutrition-check" className="nav-auth-link nav-guest-link">{t('navbar.track')}</Link>
               <button
                 type="button"
                 className="nav-lang-toggle"
