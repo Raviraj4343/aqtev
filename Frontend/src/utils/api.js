@@ -229,7 +229,11 @@ async function request(path, { method = 'GET', body, token, headers = {} } = {})
   if (body) init.body = JSON.stringify(body)
   if (token) init.headers['Authorization'] = `Bearer ${token}`
 
-  await ensureNativeBackendWarm(apiBase)
+  // Warmup is useful before read-heavy GETs on sleepy hosts, but it adds latency
+  // to auth writes (e.g., login). Skip for non-GET requests.
+  if (method === 'GET') {
+    await ensureNativeBackendWarm(apiBase)
+  }
 
   const runNativeRequest = async () => {
     try {

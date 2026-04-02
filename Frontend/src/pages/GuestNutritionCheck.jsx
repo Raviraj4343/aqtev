@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import Card from '../components/ui/Card'
 import FoodSearch from '../components/FoodSearch'
 import { useLanguage } from '../contexts/LanguageContext'
+import * as api from '../utils/api'
 
 const MEAL_OPTIONS = ['breakfast', 'lunch', 'dinner', 'snacks']
 
@@ -32,6 +33,24 @@ export default function GuestNutritionCheck(){
   const [pendingQuantity, setPendingQuantity] = useState('1')
   const [entries, setEntries] = useState([])
   const [showReport, setShowReport] = useState(false)
+  const [foods, setFoods] = useState([])
+
+  useEffect(() => {
+    let mounted = true
+    api.getAllFoods()
+      .then((res) => {
+        if (!mounted) return
+        setFoods(Array.isArray(res?.data) ? res.data : [])
+      })
+      .catch(() => {
+        if (!mounted) return
+        setFoods([])
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const handleSelectFood = (food) => {
     setPendingFood(food)
@@ -163,7 +182,7 @@ export default function GuestNutritionCheck(){
             ))}
           </div>
 
-            <FoodSearch onSelect={handleSelectFood} placeholder={isHindi ? `${mealLabel(mealType)} के लिए खाद्य पदार्थ खोजें...` : `Search foods for ${formatMeal(mealType)}...`} />
+            <FoodSearch foods={foods} onSelect={handleSelectFood} placeholder={isHindi ? `${mealLabel(mealType)} के लिए खाद्य पदार्थ खोजें...` : `Search foods for ${formatMeal(mealType)}...`} />
 
           {pendingFood ? (
             <div className="guest-pending-card">

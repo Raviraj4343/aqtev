@@ -3,6 +3,7 @@ import Input from './ui/Input'
 import Button from './ui/Button'
 import FoodSearch from './FoodSearch'
 import { useLanguage } from '../contexts/LanguageContext'
+import * as api from '../utils/api'
 
 const WATER_OPTIONS = ['', '<1L', '1-2L', '2-3L', '3L+']
 const MEAL_OPTIONS = ['breakfast', 'lunch', 'dinner', 'snacks']
@@ -33,6 +34,24 @@ export default function DailyLogEditor({
   const [saving, setSaving] = useState(false)
   const [pendingFood, setPendingFood] = useState(null)
   const [pendingQuantity, setPendingQuantity] = useState('1')
+  const [foods, setFoods] = useState([])
+
+  useEffect(() => {
+    let mounted = true
+    api.getAllFoods()
+      .then((res) => {
+        if (!mounted) return
+        setFoods(Array.isArray(res?.data) ? res.data : [])
+      })
+      .catch(() => {
+        if (!mounted) return
+        setFoods([])
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   useEffect(() => {
     setStatus('')
@@ -121,7 +140,7 @@ export default function DailyLogEditor({
           ))}
         </div>
 
-          <FoodSearch onSelect={handleSelectFood} placeholder={isHindi ? `${mealType === 'breakfast' ? 'नाश्ता' : mealType === 'lunch' ? 'दोपहर का भोजन' : mealType === 'dinner' ? 'रात का भोजन' : 'स्नैक्स'} के लिए खाद्य पदार्थ खोजें...` : `Search foods for ${mealType}...`} />
+          <FoodSearch foods={foods} onSelect={handleSelectFood} placeholder={isHindi ? `${mealType === 'breakfast' ? 'नाश्ता' : mealType === 'lunch' ? 'दोपहर का भोजन' : mealType === 'dinner' ? 'रात का भोजन' : 'स्नैक्स'} के लिए खाद्य पदार्थ खोजें...` : `Search foods for ${mealType}...`} />
 
         {pendingFood ? (
           <div className="meal-add-card">

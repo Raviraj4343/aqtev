@@ -25,38 +25,36 @@ export function AuthProvider({ children }){
     const res = await api.login(payload)
     // Save access token (backend also sets cookies). This helps dev when cookies are blocked for cross-origin.
     try{ if (res?.data?.accessToken) api.saveToken(res.data.accessToken, rememberMe) }catch(e){}
-    // Hydrate full user data after login so profile fields persist across sessions.
-    try{
-      const me = await api.getMe(res?.data?.accessToken)
-      const nextUser = me?.data || null
-      setUser(nextUser)
-      if (rememberMe) {
-        api.saveRememberedUser(nextUser || { email: payload?.email })
-        if (payload?.email && payload?.password) {
-          api.saveRememberedCredentials({ email: payload.email, password: payload.password })
-        }
-        setRememberedUser(api.readRememberedUser())
-      } else {
-        api.clearRememberedUser()
-        api.clearRememberedCredentials()
-        setRememberedUser(null)
+
+    // Apply user state immediately so UI can continue without waiting for another roundtrip.
+    const immediateUser = api.normalizeUser(res?.data?.user || null)
+    setUser(immediateUser)
+
+    if (rememberMe) {
+      api.saveRememberedUser(immediateUser || { email: payload?.email })
+      if (payload?.email && payload?.password) {
+        api.saveRememberedCredentials({ email: payload.email, password: payload.password })
       }
-    }catch(e){
-      // Fallback to login payload if /auth/me is temporarily unavailable.
-      const nextUser = api.normalizeUser(res?.data?.user || null)
-      setUser(nextUser)
-      if (rememberMe) {
-        api.saveRememberedUser(nextUser || { email: payload?.email })
-        if (payload?.email && payload?.password) {
-          api.saveRememberedCredentials({ email: payload.email, password: payload.password })
-        }
-        setRememberedUser(api.readRememberedUser())
-      } else {
-        api.clearRememberedUser()
-        api.clearRememberedCredentials()
-        setRememberedUser(null)
-      }
+      setRememberedUser(api.readRememberedUser())
+    } else {
+      api.clearRememberedUser()
+      api.clearRememberedCredentials()
+      setRememberedUser(null)
     }
+
+    // Hydrate full profile in background to enrich fields when available.
+    api.getMe(res?.data?.accessToken)
+      .then((me) => {
+        const hydrated = me?.data || null
+        if (!hydrated) return
+        setUser(hydrated)
+        if (rememberMe) {
+          api.saveRememberedUser(hydrated)
+          setRememberedUser(api.readRememberedUser())
+        }
+      })
+      .catch(() => {})
+
     return res
   }
 
