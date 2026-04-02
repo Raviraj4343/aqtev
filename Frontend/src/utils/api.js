@@ -2,7 +2,7 @@ import { Capacitor, CapacitorHttp } from '@capacitor/core'
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1'])
 const IPV4_PATTERN = /^(?:\d{1,3}\.){3}\d{1,3}$/
-const DEFAULT_DEV_API_BASE = 'http://localhost:8000/api/v1'
+const DEFAULT_DEV_API_BASE = '/api/v1'
 const DEFAULT_PROD_API_BASE = 'https://fitcek.onrender.com/api/v1'
 const ANDROID_EMULATOR_HOST = '10.0.2.2'
 
@@ -57,7 +57,6 @@ const resolveApiBase = () => {
   const explicit = normalizeApiBase(import.meta.env.VITE_API_BASE)
   if (explicit) return toAndroidReachableHost(explicit)
 
-  const devBase = normalizeApiBase(import.meta.env.VITE_API_BASE_DEV)
   const prodBase = normalizeApiBase(import.meta.env.VITE_API_BASE_PROD)
   const nativeBase = normalizeApiBase(import.meta.env.VITE_API_BASE_NATIVE || import.meta.env.VITE_API_BASE_ANDROID)
 
@@ -68,7 +67,10 @@ const resolveApiBase = () => {
   if (typeof window !== 'undefined') {
     const host = window.location.hostname
     const isLocalHost = LOCAL_HOSTS.has(host) || IPV4_PATTERN.test(host)
-    if (isLocalHost) return devBase || normalizeApiBase(DEFAULT_DEV_API_BASE)
+    if (isLocalHost) {
+      const webLocalBase = normalizeApiBase(import.meta.env.VITE_API_BASE_WEB_LOCAL)
+      return webLocalBase || normalizeApiBase(DEFAULT_DEV_API_BASE)
+    }
   }
 
   return prodBase || normalizeApiBase(DEFAULT_PROD_API_BASE)
@@ -101,8 +103,14 @@ const memoSet = (key, value) => {
 }
 
 const getApiOrigin = () => {
+  const base = getApiBase()
+  if (base.startsWith('/')) {
+    if (typeof window !== 'undefined') return window.location.origin
+    return ''
+  }
+
   try {
-    return new URL(getApiBase()).origin
+    return new URL(base).origin
   } catch {
     return ''
   }
