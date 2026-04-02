@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { translations } from '../i18n/translations'
 
-const STORAGE_KEY = 'aqtev.language'
+const STORAGE_KEY = 'fitcek.language'
 const SUPPORTED = ['en', 'hi']
 
 const LanguageContext = createContext(null)

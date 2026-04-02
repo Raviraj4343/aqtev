@@ -3,7 +3,7 @@ import { Capacitor } from '@capacitor/core'
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1'])
 const IPV4_PATTERN = /^(?:\d{1,3}\.){3}\d{1,3}$/
 const DEFAULT_DEV_API_BASE = 'http://localhost:8000/api/v1'
-const DEFAULT_PROD_API_BASE = 'https://aqtev.onrender.com/api/v1'
+const DEFAULT_PROD_API_BASE = 'https://fitcek.onrender.com/api/v1'
 
 const isNativeRuntime = () => {
   try {
@@ -144,7 +144,7 @@ async function request(path, { method = 'GET', body, token, headers = {} } = {})
   // If no explicit token provided, try reading a saved access token from localStorage
   if (!token) {
     try{
-      const stored = localStorage.getItem('aqtev_access')
+      const stored = localStorage.getItem('fitcek_access')
       if (stored) token = stored
     }catch{}
   }
@@ -484,15 +484,15 @@ export function getGuideLiveSuggestion(payload = {}){
 
 // Simple local token helpers (optional — backend uses cookies)
 export function saveToken(token){
-  try{ localStorage.setItem('aqtev_access', token) }catch{}
+  try{ localStorage.setItem('fitcek_access', token) }catch{}
 }
 
 export function readToken(){
-  try{ return localStorage.getItem('aqtev_access') }catch{ return null }
+  try{ return localStorage.getItem('fitcek_access') }catch{ return null }
 }
 
 export function clearToken(){
-  try{ localStorage.removeItem('aqtev_access') }catch{}
+  try{ localStorage.removeItem('fitcek_access') }catch{}
 }
 
 export default {

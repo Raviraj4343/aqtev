@@ -10,7 +10,7 @@ export default function MockupAuth(){
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',height:'100vh'}}>
       <div style={{background:'linear-gradient(180deg,var(--color-primary),var(--color-primary-600))',color:'#fff,',display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
         <div style={{maxWidth:360,textAlign:'center'}}>
-          <h2 style={{margin:0,fontSize:24}}>Welcome to <span className="brand-split"><span className="aq">AQ</span><span className="tev">TEV</span></span></h2>
+          <h2 style={{margin:0,fontSize:24}}>Welcome to <span className="brand-split"><span className="fit">Fit</span><span className="cek">Cek</span></span></h2>
           <p style={{opacity:0.92}}>Track, analyze and improve.</p>
           <div style={{marginTop:20,background:'rgba(255,255,255,0.04)',padding:20,borderRadius:12}}>
             <p style={{fontSize:14}}>Secure · Modern · Accurate</p>

@@ -4,9 +4,9 @@
   --color-primary-600: #045f58;   /* darker teal for contrast */
   --color-secondary: #0fb07a;     /* fresh emerald */
   --color-accent: #06b6d4;        /* aqua accent for highlights */
-  /* Brand split colors (AQ blue, TEV green) to match logo */
-  --brand-aq: #0077D9;
-  --brand-tev: #39B54A;
+  /* Brand split colors (Fit blue, Cek green) */
+  --brand-fit: #0077D9;
+  --brand-cek: #39B54A;
   --color-bg: #DFFCF7;           /* greener mint base (soft, but slightly brighter center) */
   --color-surface: #E7EEF0;      /* darker neutral surface for elegant contrast */
   --surface-contrast: #DCE6E9;   /* subtle deeper panel tone */

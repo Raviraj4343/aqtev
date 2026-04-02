@@ -30,13 +30,13 @@ For local development (`Frontend/.env`):
 
 ```env
 VITE_API_BASE_DEV=http://localhost:8000/api/v1
-VITE_API_BASE_PROD=https://aqtev.onrender.com/api/v1
+VITE_API_BASE_PROD=https://fitcek.onrender.com/api/v1
 ```
 
 For Vercel production environment variables:
 
 ```env
-VITE_API_BASE_PROD=https://aqtev.onrender.com/api/v1
+VITE_API_BASE_PROD=https://fitcek.onrender.com/api/v1
 ```
 
 Optional override:

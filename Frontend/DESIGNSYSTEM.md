@@ -1,4 +1,4 @@
-AQTEV Design System — Compact Spec
+FitCek Design System — Compact Spec
 
 1) Tokens (CSS variables in `src/styles/tokens.css`)
 - Primary: `--color-primary`: #2563EB

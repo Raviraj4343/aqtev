@@ -24,11 +24,11 @@ const sendVerificationEmail = async (email, name, tokenOrCode, { isCode = false 
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; padding: 20px; background-color: #f6fbfa;">
       <div style="text-align:center;padding:18px 0;">
-        <img src="${logoUrl}" alt="AQTEV" style="height:56px;display:inline-block;" />
+        <img src="${logoUrl}" alt="FitCek" style="height:56px;display:inline-block;" />
       </div>
       <div style="background: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 18px rgba(2,6,23,0.06);">
         <h2 style="color: #042827; margin-top:0">Hi ${name}! 👋</h2>
-        <p style="color: #475e63; font-size: 16px;">Thanks for signing up for <strong>AQTEV</strong>. Please verify your email address to activate your account.</p>
+        <p style="color: #475e63; font-size: 16px;">Thanks for signing up for <strong>FitCek</strong>. Please verify your email address to activate your account.</p>
         <div style="text-align: center; margin: 28px 0;">
           ${isCode ? (
             `<div style="font-size:28px;letter-spacing:6px;background:#f0f9f8;display:inline-block;padding:14px 22px;border-radius:8px;font-weight:700;color:#013a34">${tokenOrCode}</div>`
@@ -47,7 +47,7 @@ const sendVerificationEmail = async (email, name, tokenOrCode, { isCode = false 
         </div>
         <p style="color: #94a3b8; font-size: 13px;">This link expires in <strong>${process.env.EMAIL_VERIFICATION_EXPIRE_TIME || '24 hours'}</strong>. If you didn't create an account, you can safely ignore this email.</p>
         <hr style="border: none; border-top: 1px solid #eef2f6; margin: 20px 0;">
-        <p style="color: #9aa7a3; font-size: 12px; text-align: center;">AQTEV © ${new Date().getFullYear()}</p>
+        <p style="color: #9aa7a3; font-size: 12px; text-align: center;">FitCek © ${new Date().getFullYear()}</p>
       </div>
     </div>
   `
@@ -64,9 +64,9 @@ const sendVerificationEmail = async (email, name, tokenOrCode, { isCode = false 
   }
 
   const payload = {
-    sender: { name: process.env.SENDER_NAME || 'AQTEV', email: senderEmail },
+    sender: { name: process.env.SENDER_NAME || 'FitCek', email: senderEmail },
     to: [{ email, name }],
-    subject: '✅ Verify Your Email – AQTEV',
+    subject: '✅ Verify Your Email – FitCek',
     htmlContent,
   }
 
@@ -88,7 +88,7 @@ const sendPasswordResetEmail = async (email, name, token) => {
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; padding: 20px; background-color: #f6fbfa;">
       <div style="text-align:center;padding:18px 0;">
-        <img src="${logoUrl}" alt="AQTEV" style="height:56px;display:inline-block;" />
+        <img src="${logoUrl}" alt="FitCek" style="height:56px;display:inline-block;" />
       </div>
       <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 18px rgba(2,6,23,0.06);">
         <h2 style="margin-top:0;color:#042827">Hi ${name},</h2>
@@ -113,9 +113,9 @@ const sendPasswordResetEmail = async (email, name, token) => {
   }
 
   const payload = {
-    sender: { name: process.env.SENDER_NAME || 'AQTEV', email: senderEmail },
+    sender: { name: process.env.SENDER_NAME || 'FitCek', email: senderEmail },
     to: [{ email, name }],
-    subject: '🔑 Reset Your Password – AQTEV',
+    subject: '🔑 Reset Your Password – FitCek',
     htmlContent,
   }
 

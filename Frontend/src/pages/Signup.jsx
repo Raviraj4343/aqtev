@@ -45,7 +45,7 @@ export default function Signup(){
       <div className="auth-page-card auth-page-card-simple">
         <span className="auth-page-kicker">{isHindi ? 'शुरू करें' : 'Get started'}</span>
         <h2>{isHindi ? 'खाता बनाएं' : 'Create account'}</h2>
-        <p className="auth-page-copy">{isHindi ? 'अपना मुफ्त ट्रायल शुरू करें और AQTEV को एक्सप्लोर करें।' : 'Start your free trial and explore '} {!isHindi ? <Brand textOnly inline /> : null}{isHindi ? '' : '.'}</p>
+        <p className="auth-page-copy">{isHindi ? 'अपना मुफ्त ट्रायल शुरू करें और FitCek को एक्सप्लोर करें।' : 'Start your free trial and explore '} {!isHindi ? <Brand textOnly inline /> : null}{isHindi ? '' : '.'}</p>
 
         <form onSubmit={handleSubmit} className="auth-page-form">
           <Input id="su-name" label={isHindi ? 'पूरा नाम' : 'Full name'} value={name} onChange={e=>setName(e.target.value)} required />

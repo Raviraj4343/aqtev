@@ -209,7 +209,7 @@ const generateGuideLiveSuggestion = async (payload) => {
     : "No previous messages in this chat.";
 
   const client = new GoogleGenerativeAI(apiKey);
-  const prompt = `You are AQTEV's conversational AI health coach.
+  const prompt = `You are FitCek's conversational AI health coach.
 
 Talk naturally like ChatGPT: warm, concise, and interactive.
 Speak directly to the user by name when possible.

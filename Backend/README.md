@@ -1,4 +1,4 @@
-AQTEV Backend
+FitCek Backend
 ===============
 
 Email delivery
@@ -12,7 +12,7 @@ Required environment variables (set these in `Backend/.env` or your deployment e
 - `SENDER_EMAIL` — a verified sender email configured in your Brevo account
 - `SENDER_NAME` — display name for the sender (optional)
 - `CLIENT_URL` — frontend URL used in email links (e.g. `http://localhost:3000`)
-- `CORS_ORIGIN` — comma-separated list of allowed browser origins in production (e.g. `https://aqtev.vercel.app,https://your-preview.vercel.app`)
+- `CORS_ORIGIN` — comma-separated list of allowed browser origins in production (e.g. `https://fitcek.vercel.app,https://your-preview.vercel.app`)
 
 Important notes
 ---------------

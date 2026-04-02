@@ -6,13 +6,13 @@ import '../styles/global.css'
 export default function Brand({ to, showLogo = true, textOnly = false, inline = false }){
   const content = textOnly ? (
     <span className={inline ? 'brand-split inline' : 'brand-split'}>
-      <span className="aq">AQ</span><span className="tev">TEV</span>
+      <span className="fit">Fit</span><span className="cek">Cek</span>
     </span>
   ) : (
     <>
-      {showLogo && <img src={logo} alt="AQTEV" className="app-logo" />}
+      {showLogo && <img src={logo} alt="FitCek" className="app-logo" />}
       <span className={inline ? 'brand-text inline' : 'brand-text'}>
-        <span className="aq">AQ</span><span className="tev">TEV</span>
+        <span className="fit">Fit</span><span className="cek">Cek</span>
       </span>
     </>
   )

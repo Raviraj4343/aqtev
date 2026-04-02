@@ -180,10 +180,10 @@ a:hover{color:var(--color-accent);text-decoration:underline}
 .ml{margin-left:8px}
 .auth-brand .app-logo{height:48px}
 .brand-split{display:inline-flex;align-items:center;gap:0;font-weight:800}
-.brand-split .aq{color:var(--brand-aq);margin-right:0}
-.brand-split .tev{color:var(--brand-tev);margin-left:0}
-.brand-text .aq{color:var(--brand-aq);margin-right:0}
-.brand-text .tev{color:var(--brand-tev);margin-left:0}
+.brand-split .fit{color:var(--brand-fit);margin-right:0}
+.brand-split .cek{color:var(--brand-cek);margin-left:0}
+.brand-text .fit{color:var(--brand-fit);margin-right:0}
+.brand-text .cek{color:var(--brand-cek);margin-left:0}
 .brand-text{letter-spacing:0;}
 .brand.inline{display:inline-flex;align-items:center;gap:8px}
 .brand.link{text-decoration:none}

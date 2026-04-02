@@ -1,4 +1,4 @@
-AQTEV Design Tokens & Style Guide
+FitCek Design Tokens & Style Guide
 
 Purpose
 - Single-page reference for tokens, typography, spacing, and component usage.

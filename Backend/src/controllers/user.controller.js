@@ -43,7 +43,7 @@ const signCloudinaryParams = (params, apiSecret) => {
 const uploadToCloudinary = async (file, userId) => {
   const { cloudName, apiKey, apiSecret } = getCloudinaryConfig();
   const timestamp = Math.floor(Date.now() / 1000);
-  const folder = "aqtev/avatars";
+  const folder = "fitcek/avatars";
   const publicId = `user_${userId}_${Date.now()}`;
   const signature = signCloudinaryParams(
     { folder, public_id: publicId, timestamp },

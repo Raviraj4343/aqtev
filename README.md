@@ -1,6 +1,6 @@
-# 🏋️ AQTEV – Smart Health Tracking Platform
+# 🏋️ FitCek – Smart Health Tracking Platform
 
-AQTEV is a full-stack health tracking application that helps users monitor daily nutrition, weight, and lifestyle habits with AI-powered insights and personalized recommendations.
+FitCek is a full-stack health tracking application that helps users monitor daily nutrition, weight, and lifestyle habits with AI-powered insights and personalized recommendations.
 
 It provides real-time tracking, intelligent suggestions, and a clean user experience designed for long-term health improvement.
 
@@ -8,8 +8,8 @@ It provides real-time tracking, intelligent suggestions, and a clean user experi
 
 ## 🌐 Live Demo
 
-* 🔗 Frontend: https://aqtev.vercel.com
-* 🔗 Backend: https://aqtev.onrender.com
+* 🔗 Frontend: https://fitcek.vercel.com
+* 🔗 Backend: https://fitcek.onrender.com
 
 
 ---
@@ -53,8 +53,8 @@ It provides real-time tracking, intelligent suggestions, and a clean user experi
 ### 1. Clone and install dependencies
 
 ```bash
-git clone <your-repo-url> aqtev
-cd aqtev
+git clone <your-repo-url> fitcek
+cd fitcek
 
 cd Backend
 npm install
@@ -85,7 +85,7 @@ EMAIL_VERIFICATION_EXPIRE_TIME=24h
 
 BREVO_API_KEY=your_brevo_api_key
 SENDER_EMAIL=verified-sender@example.com
-SENDER_NAME=AQTEV
+SENDER_NAME=FitCek
 
 CLIENT_URL=http://localhost:3000
 CORS_ORIGIN=http://localhost:3000,http://localhost:5173
@@ -105,7 +105,7 @@ Create `Frontend/.env`:
 
 ```env
 VITE_API_BASE_DEV=http://localhost:8000/api/v1
-VITE_API_BASE_PROD=https://aqtev.onrender.com/api/v1
+VITE_API_BASE_PROD=https://fitcek.onrender.com/api/v1
 ```
 
 ---

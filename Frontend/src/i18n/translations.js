@@ -49,7 +49,7 @@ export const translations = {
       send: 'Send',
       askQuestionFirst: 'Please type your question first.',
       emptyThread: 'Ask about budget meals, macros, workouts, or sleep.',
-      coachName: 'AQTEV Coach',
+      coachName: 'FitCek Coach',
       you: 'You',
       thinking: 'Thinking...'
     },
@@ -182,7 +182,7 @@ export const translations = {
       send: 'भेजें',
       askQuestionFirst: 'कृपया पहले अपना सवाल लिखें।',
       emptyThread: 'बजट भोजन, मैक्रोज़, वर्कआउट या नींद के बारे में पूछें।',
-      coachName: 'AQTEV कोच',
+      coachName: 'FitCek कोच',
       you: 'आप',
       thinking: 'सोच रहा है...'
     },

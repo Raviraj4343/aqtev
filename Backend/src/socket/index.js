@@ -10,8 +10,8 @@ const socketCorsOrigins = (process.env.CORS_ORIGIN || "")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-if (!socketCorsOrigins.includes("https://aqtev.vercel.app")) {
-  socketCorsOrigins.push("https://aqtev.vercel.app");
+if (!socketCorsOrigins.includes("https://fitcek.vercel.app")) {
+  socketCorsOrigins.push("https://fitcek.vercel.app");
 }
 
 const initSocket = (httpServer) => {
