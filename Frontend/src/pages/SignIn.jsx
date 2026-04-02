@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api from '../utils/api'
 import { useAuth } from '../contexts/AuthContext'
@@ -13,22 +13,67 @@ export default function SignIn(){
   const auth = useAuth()
   const { language } = useLanguage()
   const isHindi = language === 'hi'
+  const rememberedUser = auth.rememberedUser
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(Boolean(rememberedUser?.email))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [showResend, setShowResend] = useState(false)
-  const [resendEmail, setResendEmail] = useState('')
   const [showVerify, setShowVerify] = useState(false)
   const [verifyEmailAddr, setVerifyEmailAddr] = useState('')
   const navigate = useNavigate()
+
+  useEffect(()=>{
+    if(auth.user) navigate('/dashboard', { replace: true })
+  }, [auth.user, navigate])
+
+  useEffect(()=>{
+    if (rememberedUser?.email) setRememberMe(true)
+  }, [rememberedUser])
+
+  async function handleContinueWith(){
+    const remembered = auth.continueWithRemembered?.()
+    const rememberedAuth = api.readRememberedCredentials?.()
+    if (!remembered?.email) return
+    setEmail(remembered.email)
+    if (rememberedAuth?.email?.toLowerCase?.() === remembered.email.toLowerCase() && rememberedAuth?.password) {
+      setPassword(rememberedAuth.password)
+    }
+    setRememberMe(true)
+    setError(null)
+    setVerifyEmailAddr(remembered.email)
+
+    if (loading) return
+
+    setLoading(true)
+    try{
+      const result = await auth.autoLoginRemembered?.()
+      if (!result?.ok) {
+        setLoading(false)
+        setError(isHindi ? 'सेशन समाप्त हो गया है। कृपया दोबारा लॉगिन करें।' : 'Your remembered session expired. Please sign in again.')
+        return
+      }
+      setLoading(false)
+      navigate('/dashboard')
+    }catch(err){
+      setLoading(false)
+      setError(err.payload?.message || err.message || (isHindi ? 'साइन इन असफल रहा' : 'Sign in failed'))
+    }
+  }
+
+  function handleUseAnother(){
+    const rememberedEmail = rememberedUser?.email || ''
+    auth.forgetRemembered?.()
+    setRememberMe(false)
+    if (rememberedEmail && email === rememberedEmail) setEmail('')
+  }
 
   async function handleSubmit(e){
     e.preventDefault()
     setError(null)
     setLoading(true)
     try{
-      const res = await auth.login({ email, password })
+      await auth.login({ email, password }, { rememberMe })
       setLoading(false)
       navigate('/dashboard')
     }catch(err){
@@ -54,8 +99,22 @@ export default function SignIn(){
         <p className="auth-page-copy">{isHindi ? 'डैशबोर्ड देखने के लिए अपनी जानकारी दर्ज करें।' : 'Enter your credentials to access your dashboard.'}</p>
 
         <form onSubmit={handleSubmit} className="auth-page-form">
-          <Input id="si-email" label={isHindi ? 'ईमेल पता' : 'Email address'} type="email" value={email} onChange={e=>setEmail(e.target.value)} required />
-          <Input id="si-password" label={isHindi ? 'पासवर्ड' : 'Password'} type="password" value={password} onChange={e=>setPassword(e.target.value)} required />
+          {rememberedUser?.email && (
+            <div className="auth-continue-card">
+              <div className="auth-continue-copy">
+                <span className="auth-continue-label">{isHindi ? 'इसके साथ जारी रखें' : 'Continue with'}</span>
+                <strong>{rememberedUser.name || rememberedUser.email}</strong>
+                {rememberedUser.name ? <small>{rememberedUser.email}</small> : null}
+              </div>
+              <div className="auth-continue-actions">
+                <Button type="button" className="btn-ghost auth-continue-btn" onClick={handleContinueWith} disabled={loading}>{isHindi ? 'जारी रखें' : 'Continue'}</Button>
+                <button type="button" className="auth-continue-clear" onClick={handleUseAnother}>{isHindi ? 'दूसरा खाता इस्तेमाल करें' : 'Use another account'}</button>
+              </div>
+            </div>
+          )}
+
+          <Input id="si-email" label={isHindi ? 'ईमेल पता' : 'Email address'} type="email" value={email} autoComplete="username" onChange={e=>setEmail(e.target.value)} required />
+          <Input id="si-password" label={isHindi ? 'पासवर्ड' : 'Password'} type="password" value={password} autoComplete="current-password" onChange={e=>setPassword(e.target.value)} required />
 
           {error && <div className="auth-page-error">{error}</div>}
 
@@ -70,7 +129,7 @@ export default function SignIn(){
           )}
 
           <div className="auth-page-row">
-            <label className="auth-page-checkbox"><input type="checkbox"/> {isHindi ? 'मुझे याद रखें' : 'Remember me'}</label>
+            <label className="auth-page-checkbox"><input type="checkbox" checked={rememberMe} onChange={e=>setRememberMe(e.target.checked)} /> {isHindi ? 'मुझे याद रखें' : 'Remember me'}</label>
             <Link to="/forgot" className="auth-page-link">{isHindi ? 'पासवर्ड भूल गए?' : 'Forgot password?'}</Link>
           </div>
 

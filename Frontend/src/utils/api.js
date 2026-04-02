@@ -1,15 +1,39 @@
-import { Capacitor } from '@capacitor/core'
+import { Capacitor, CapacitorHttp } from '@capacitor/core'
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1'])
 const IPV4_PATTERN = /^(?:\d{1,3}\.){3}\d{1,3}$/
 const DEFAULT_DEV_API_BASE = 'http://localhost:8000/api/v1'
 const DEFAULT_PROD_API_BASE = 'https://fitcek.onrender.com/api/v1'
+const ANDROID_EMULATOR_HOST = '10.0.2.2'
 
 const isNativeRuntime = () => {
   try {
     return Capacitor.isNativePlatform()
   } catch {
     return false
+  }
+}
+
+const isAndroidRuntime = () => {
+  try {
+    return Capacitor.getPlatform() === 'android'
+  } catch {
+    return false
+  }
+}
+
+const toAndroidReachableHost = (value) => {
+  if (!value || !isAndroidRuntime()) return value
+
+  try {
+    const url = new URL(value)
+    if (LOCAL_HOSTS.has(url.hostname)) {
+      url.hostname = ANDROID_EMULATOR_HOST
+      return url.toString().replace(/\/+$/, '')
+    }
+    return value
+  } catch {
+    return value
   }
 }
 
@@ -31,13 +55,14 @@ const normalizeApiBase = (value) => {
 
 const resolveApiBase = () => {
   const explicit = normalizeApiBase(import.meta.env.VITE_API_BASE)
-  if (explicit) return explicit
+  if (explicit) return toAndroidReachableHost(explicit)
 
   const devBase = normalizeApiBase(import.meta.env.VITE_API_BASE_DEV)
   const prodBase = normalizeApiBase(import.meta.env.VITE_API_BASE_PROD)
+  const nativeBase = normalizeApiBase(import.meta.env.VITE_API_BASE_NATIVE || import.meta.env.VITE_API_BASE_ANDROID)
 
   if (isNativeRuntime()) {
-    return prodBase || normalizeApiBase(DEFAULT_PROD_API_BASE)
+    return toAndroidReachableHost(nativeBase || prodBase || normalizeApiBase(DEFAULT_PROD_API_BASE))
   }
 
   if (typeof window !== 'undefined') {
@@ -50,9 +75,16 @@ const resolveApiBase = () => {
 }
 
 const API_BASE = resolveApiBase()
-const REQUEST_TIMEOUT_MS = 15000
+const REQUEST_TIMEOUT_MS = 65000
 const MEMO_TTL_MS = 2 * 60 * 1000
+const NATIVE_RETRY_DELAYS_MS = [1800, 4000]
+const NATIVE_WARMUP_TTL_MS = 90 * 1000
+const ACCESS_TOKEN_KEY = 'fitcek_access'
+const REMEMBERED_USER_KEY = 'fitcek_remembered_user'
+const REMEMBERED_AUTH_KEY = 'fitcek_remembered_auth'
 const memoCache = new Map()
+let nativeWarmupPromise = null
+let nativeWarmupAt = 0
 
 const memoGet = (key) => {
   const entry = memoCache.get(key)
@@ -74,6 +106,57 @@ const getApiOrigin = () => {
   } catch {
     return ''
   }
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const parseDataPayload = (value) => {
+  if (value == null) return null
+  if (typeof value === 'string') {
+    try { return JSON.parse(value) } catch { return null }
+  }
+  if (typeof value === 'object') return value
+  return null
+}
+
+const createHttpError = (status, data) => {
+  const err = new Error(data?.message || `Request failed${status ? ` (${status})` : ''}`)
+  err.status = status
+  err.payload = data
+  return err
+}
+
+const getHealthUrl = (apiBase) => {
+  try {
+    const url = new URL(apiBase)
+    return `${url.origin}/health`
+  } catch {
+    return '/health'
+  }
+}
+
+const ensureNativeBackendWarm = async (apiBase) => {
+  if (!isNativeRuntime()) return
+  if (Date.now() - nativeWarmupAt < NATIVE_WARMUP_TTL_MS) return
+  if (nativeWarmupPromise) return nativeWarmupPromise
+
+  nativeWarmupPromise = (async () => {
+    try {
+      await CapacitorHttp.request({
+        url: getHealthUrl(apiBase),
+        method: 'GET',
+        connectTimeout: REQUEST_TIMEOUT_MS,
+        readTimeout: REQUEST_TIMEOUT_MS,
+      })
+    } catch {
+      // Ignore warmup errors; actual request still runs with retries.
+    } finally {
+      nativeWarmupAt = Date.now()
+      nativeWarmupPromise = null
+    }
+  })()
+
+  return nativeWarmupPromise
 }
 
 function getApiBase(){
@@ -120,6 +203,7 @@ export function normalizeUser(user){
 
 async function request(path, { method = 'GET', body, token, headers = {} } = {}){
   const apiBase = getApiBase()
+  const url = `${apiBase}${path}`
 
   if (
     typeof window !== 'undefined' &&
@@ -130,46 +214,99 @@ async function request(path, { method = 'GET', body, token, headers = {} } = {})
     throw new Error('Blocked insecure API URL over HTTP from an HTTPS page. Use an HTTPS API URL in production.')
   }
 
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
   const init = {
     method,
     headers: {
       'Content-Type': 'application/json',
       ...headers
     },
-    credentials: 'include',
-    signal: controller.signal
+    credentials: 'include'
   }
-  // If no explicit token provided, try reading a saved access token from localStorage
+  // If no explicit token provided, try reading a saved access token from storage.
   if (!token) {
-    try{
-      const stored = localStorage.getItem('fitcek_access')
-      if (stored) token = stored
-    }catch{}
+    try{ token = readToken() || token }catch{}
   }
   if (body) init.body = JSON.stringify(body)
   if (token) init.headers['Authorization'] = `Bearer ${token}`
 
-  try {
-    const res = await fetch(`${apiBase}${path}`, init)
-    const data = await res.json().catch(()=>null)
-    if (!res.ok) {
-      const err = new Error(data?.message || 'Request failed')
-      err.status = res.status
-      err.payload = data
+  await ensureNativeBackendWarm(apiBase)
+
+  const runNativeRequest = async () => {
+    try {
+      const res = await CapacitorHttp.request({
+        url,
+        method,
+        headers: init.headers,
+        data: body,
+        connectTimeout: REQUEST_TIMEOUT_MS,
+        readTimeout: REQUEST_TIMEOUT_MS,
+      })
+      const data = parseDataPayload(res?.data)
+      if (!res || res.status < 200 || res.status >= 300) {
+        throw createHttpError(res?.status || 0, data)
+      }
+      return data
+    } catch (err) {
+      if (typeof err?.status === 'number') throw err
+      const nativeCause = String(err?.message || err?.error || err || '').trim()
+      throw createHttpError(0, {
+        message: `Network error: unable to reach API at ${apiBase}. Check device internet and API URL. If you use Render free tier, first request can take up to ~50s.${nativeCause ? ` Native detail: ${nativeCause}` : ''}`
+      })
+    }
+  }
+
+  const runWebRequest = async () => {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+    try {
+      const res = await fetch(url, { ...init, signal: controller.signal })
+      const data = await res.json().catch(()=>null)
+      if (!res.ok) throw createHttpError(res.status, data)
+      return data
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  }
+
+  const runRequest = async () => (isNativeRuntime() ? runNativeRequest() : runWebRequest())
+
+  const runWithRetry = async () => {
+    try {
+      return await runRequest()
+    } catch (err) {
+      if (!isNativeRuntime() || Number(err?.status) !== 0) throw err
+      for (const wait of NATIVE_RETRY_DELAYS_MS) {
+        await sleep(wait)
+        try {
+          return await runRequest()
+        } catch (retryErr) {
+          if (Number(retryErr?.status) !== 0) throw retryErr
+          err = retryErr
+        }
+      }
       throw err
     }
-    return data
+  }
+
+  try {
+    return await runWithRetry()
   } catch (err) {
+    if (method === 'GET' && [408, 429, 502, 503, 504].includes(Number(err?.status))) {
+      await sleep(1200)
+      return runRequest()
+    }
     if (err?.name === 'AbortError') {
-      const timeoutError = new Error('Request timed out. Please try again.')
+      const timeoutError = new Error('Request timed out. Server may be waking up. Please try again in a few seconds.')
       timeoutError.status = 408
       throw timeoutError
     }
+    if (err instanceof TypeError) {
+      const networkError = new Error(`Network error: unable to reach API at ${apiBase}. Check device internet, API URL, and Android emulator host mapping (10.0.2.2 for local backend).`)
+      networkError.status = 0
+      networkError.cause = err
+      throw networkError
+    }
     throw err
-  } finally {
-    clearTimeout(timeoutId)
   }
 }
 
@@ -483,16 +620,95 @@ export function getGuideLiveSuggestion(payload = {}){
 }
 
 // Simple local token helpers (optional — backend uses cookies)
-export function saveToken(token){
-  try{ localStorage.setItem('fitcek_access', token) }catch{}
+export function saveToken(token, remember = true){
+  if (!token) return
+  try{
+    if (remember) {
+      localStorage.setItem(ACCESS_TOKEN_KEY, token)
+      sessionStorage.removeItem(ACCESS_TOKEN_KEY)
+    } else {
+      sessionStorage.setItem(ACCESS_TOKEN_KEY, token)
+      localStorage.removeItem(ACCESS_TOKEN_KEY)
+    }
+  }catch{}
 }
 
 export function readToken(){
-  try{ return localStorage.getItem('fitcek_access') }catch{ return null }
+  try{
+    const sessionToken = sessionStorage.getItem(ACCESS_TOKEN_KEY)
+    if (sessionToken) return sessionToken
+  }catch{}
+  try{ return localStorage.getItem(ACCESS_TOKEN_KEY) }catch{ return null }
 }
 
 export function clearToken(){
-  try{ localStorage.removeItem('fitcek_access') }catch{}
+  try{ sessionStorage.removeItem(ACCESS_TOKEN_KEY) }catch{}
+  try{ localStorage.removeItem(ACCESS_TOKEN_KEY) }catch{}
+}
+
+function toRememberedUser(user){
+  if (!user || typeof user !== 'object') return null
+  const email = String(user.email || '').trim()
+  if (!email) return null
+
+  const name = String(user.name || '').trim()
+  const avatarUrl = user.avatarUrl ? resolveMediaUrl(user.avatarUrl) : null
+
+  return {
+    email,
+    ...(name ? { name } : {}),
+    ...(avatarUrl ? { avatarUrl } : {})
+  }
+}
+
+export function saveRememberedUser(user){
+  const remembered = toRememberedUser(user)
+  if (!remembered) return
+  try{ localStorage.setItem(REMEMBERED_USER_KEY, JSON.stringify(remembered)) }catch{}
+}
+
+export function readRememberedUser(){
+  try{
+    const raw = localStorage.getItem(REMEMBERED_USER_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return toRememberedUser(parsed)
+  }catch{
+    return null
+  }
+}
+
+export function clearRememberedUser(){
+  try{ localStorage.removeItem(REMEMBERED_USER_KEY) }catch{}
+}
+
+function toRememberedAuth(value){
+  if (!value || typeof value !== 'object') return null
+  const email = String(value.email || '').trim()
+  const password = String(value.password || '')
+  if (!email || !password) return null
+  return { email, password }
+}
+
+export function saveRememberedCredentials(value){
+  const normalized = toRememberedAuth(value)
+  if (!normalized) return
+  try{ localStorage.setItem(REMEMBERED_AUTH_KEY, JSON.stringify(normalized)) }catch{}
+}
+
+export function readRememberedCredentials(){
+  try{
+    const raw = localStorage.getItem(REMEMBERED_AUTH_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return toRememberedAuth(parsed)
+  }catch{
+    return null
+  }
+}
+
+export function clearRememberedCredentials(){
+  try{ localStorage.removeItem(REMEMBERED_AUTH_KEY) }catch{}
 }
 
 export default {
@@ -540,4 +756,10 @@ export default {
   saveToken,
   readToken,
   clearToken,
+  saveRememberedUser,
+  readRememberedUser,
+  clearRememberedUser,
+  saveRememberedCredentials,
+  readRememberedCredentials,
+  clearRememberedCredentials,
 }
