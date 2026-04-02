@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import Card from '../components/ui/Card'
 import api from '../utils/api'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 
 const clampPercent = (value, max) => {
   if (value === null || value === undefined || Number.isNaN(Number(value)) || max <= 0) return 0
@@ -22,25 +23,25 @@ const toTitle = (value = '') =>
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase())
 
-const formatTimelineDate = (isoDate) => {
-  if (!isoDate) return 'Recently'
+const formatTimelineDate = (isoDate, isHindi) => {
+  if (!isoDate) return isHindi ? 'हाल ही में' : 'Recently'
   const now = new Date()
   const date = new Date(`${isoDate}T00:00:00`)
   if (Number.isNaN(date.getTime())) return isoDate
 
   const dayDiff = Math.floor((now.setHours(0, 0, 0, 0) - date.getTime()) / 86400000)
-  if (dayDiff <= 0) return 'Today'
-  if (dayDiff === 1) return 'Yesterday'
-  return `${dayDiff}d ago`
+  if (dayDiff <= 0) return isHindi ? 'आज' : 'Today'
+  if (dayDiff === 1) return isHindi ? 'कल' : 'Yesterday'
+  return isHindi ? `${dayDiff} दिन पहले` : `${dayDiff}d ago`
 }
 
-const getBmiCategory = (bmi) => {
+const getBmiCategory = (bmi, isHindi) => {
   const numeric = Number(bmi)
-  if (!numeric) return 'Awaiting profile data'
-  if (numeric < 18.5) return 'Lean range'
-  if (numeric < 25) return 'Balanced range'
-  if (numeric < 30) return 'Elevated range'
-  return 'High range'
+  if (!numeric) return isHindi ? 'प्रोफ़ाइल डेटा की प्रतीक्षा' : 'Awaiting profile data'
+  if (numeric < 18.5) return isHindi ? 'कम श्रेणी' : 'Lean range'
+  if (numeric < 25) return isHindi ? 'संतुलित श्रेणी' : 'Balanced range'
+  if (numeric < 30) return isHindi ? 'बढ़ी हुई श्रेणी' : 'Elevated range'
+  return isHindi ? 'उच्च श्रेणी' : 'High range'
 }
 
 const formatValue = (value, suffix = '') => {
@@ -54,6 +55,8 @@ const waterToLiters = (value) => {
 }
 
 export default function Dashboard(){
+  const { language } = useLanguage()
+  const isHindi = language === 'hi'
   const { user } = useAuth() || {}
   const [stats, setStats] = useState({ bmi: null, requiredCalories: null, requiredProtein: null })
   const [today, setToday] = useState({ calories: 0, protein: 0 })
@@ -93,31 +96,33 @@ export default function Dashboard(){
 
           timeline.push({
             id: `log-${latestLog.date}`,
-            text: `Logged ${Math.round(latestLog.totalCalories || 0)} kcal and ${Math.round(latestLog.totalProtein || 0)} g protein${mealCount ? ` across ${mealCount} food entries` : ''}.`,
-            time: formatTimelineDate(latestLog.date)
+            text: isHindi
+              ? `${Math.round(latestLog.totalCalories || 0)} kcal और ${Math.round(latestLog.totalProtein || 0)} ग्राम प्रोटीन लॉग किया${mealCount ? ` (${mealCount} फूड एंट्री)` : ''}।`
+              : `Logged ${Math.round(latestLog.totalCalories || 0)} kcal and ${Math.round(latestLog.totalProtein || 0)} g protein${mealCount ? ` across ${mealCount} food entries` : ''}.`,
+            time: formatTimelineDate(latestLog.date, isHindi)
           })
 
           if (latestLog.steps) {
             timeline.push({
               id: `steps-${latestLog.date}`,
-              text: `Recorded ${latestLog.steps.toLocaleString()} steps.`,
-              time: formatTimelineDate(latestLog.date)
+              text: isHindi ? `${latestLog.steps.toLocaleString()} कदम रिकॉर्ड किए।` : `Recorded ${latestLog.steps.toLocaleString()} steps.`,
+              time: formatTimelineDate(latestLog.date, isHindi)
             })
           }
 
           if (latestLog.sleepHours !== null && latestLog.sleepHours !== undefined) {
             timeline.push({
               id: `sleep-${latestLog.date}`,
-              text: `Logged ${latestLog.sleepHours} hours of sleep.`,
-              time: formatTimelineDate(latestLog.date)
+              text: isHindi ? `${latestLog.sleepHours} घंटे की नींद लॉग की।` : `Logged ${latestLog.sleepHours} hours of sleep.`,
+              time: formatTimelineDate(latestLog.date, isHindi)
             })
           }
 
           if (latestLog.waterIntake) {
             timeline.push({
               id: `water-${latestLog.date}`,
-              text: `Water intake set to ${toTitle(latestLog.waterIntake)}.`,
-              time: formatTimelineDate(latestLog.date)
+              text: isHindi ? `पानी का सेवन ${toTitle(latestLog.waterIntake)} सेट किया गया।` : `Water intake set to ${toTitle(latestLog.waterIntake)}.`,
+              time: formatTimelineDate(latestLog.date, isHindi)
             })
           }
         }
@@ -125,8 +130,8 @@ export default function Dashboard(){
         if (latestWeight?.weightKg) {
           timeline.push({
             id: `weight-${latestWeight.date}`,
-            text: `Weight updated to ${latestWeight.weightKg} kg.`,
-            time: formatTimelineDate(latestWeight.date)
+            text: isHindi ? `वज़न ${latestWeight.weightKg} किग्रा अपडेट किया गया।` : `Weight updated to ${latestWeight.weightKg} kg.`,
+            time: formatTimelineDate(latestWeight.date, isHindi)
           })
         }
 
@@ -165,12 +170,12 @@ export default function Dashboard(){
           : null
 
         setSummaryRows([
-          { label: 'Average calories', note: 'Per day', value: loggedDays ? `${avgCalories}` : '-' },
-          { label: 'Average protein', note: 'Per day', value: loggedDays ? `${avgProtein} g` : '-' },
-          { label: 'Average sleep', note: 'Logged nights', value: avgSleep !== null ? `${avgSleep} h` : '-' },
-          { label: 'Average water', note: 'Logged days', value: avgWater !== null ? `${avgWater} L` : '-' },
-          { label: 'Average fiber', note: 'Per day', value: loggedDays ? `${avgFiber} g` : '-' },
-          { label: 'Average steps', note: 'Logged days', value: avgSteps !== null ? `${avgSteps}` : '-' }
+          { label: isHindi ? 'औसत कैलोरी' : 'Average calories', note: isHindi ? 'प्रति दिन' : 'Per day', value: loggedDays ? `${avgCalories}` : '-' },
+          { label: isHindi ? 'औसत प्रोटीन' : 'Average protein', note: isHindi ? 'प्रति दिन' : 'Per day', value: loggedDays ? `${avgProtein} g` : '-' },
+          { label: isHindi ? 'औसत नींद' : 'Average sleep', note: isHindi ? 'लॉग की गई रातें' : 'Logged nights', value: avgSleep !== null ? `${avgSleep} h` : '-' },
+          { label: isHindi ? 'औसत पानी' : 'Average water', note: isHindi ? 'लॉग किए गए दिन' : 'Logged days', value: avgWater !== null ? `${avgWater} L` : '-' },
+          { label: isHindi ? 'औसत फाइबर' : 'Average fiber', note: isHindi ? 'प्रति दिन' : 'Per day', value: loggedDays ? `${avgFiber} g` : '-' },
+          { label: isHindi ? 'औसत कदम' : 'Average steps', note: isHindi ? 'लॉग किए गए दिन' : 'Logged days', value: avgSteps !== null ? `${avgSteps}` : '-' }
         ])
 
         setStats({
@@ -191,30 +196,30 @@ export default function Dashboard(){
 
     load()
     return () => { mounted = false }
-  }, [])
+  }, [isHindi])
 
   const metricCards = [
     {
       id: 'bmi',
       label: 'BMI',
       value: loading ? '-' : formatValue(stats.bmi),
-      note: getBmiCategory(stats.bmi),
+      note: getBmiCategory(stats.bmi, isHindi),
       accent: 'teal',
       progress: getBodyBalanceScore(stats.bmi)
     },
     {
       id: 'calories',
-      label: 'Daily Calories',
+      label: isHindi ? 'दैनिक कैलोरी' : 'Daily Calories',
       value: loading ? '-' : formatValue(stats.requiredCalories),
-      note: 'Estimated daily target',
+      note: isHindi ? 'अनुमानित दैनिक लक्ष्य' : 'Estimated daily target',
       accent: 'blue',
       progress: stats.requiredCalories ? clampPercent(today.calories, stats.requiredCalories) : 0
     },
     {
       id: 'protein',
-      label: 'Protein Goal',
+      label: isHindi ? 'प्रोटीन लक्ष्य' : 'Protein Goal',
       value: loading ? '-' : formatValue(stats.requiredProtein, 'g'),
-      note: 'Suggested daily intake',
+      note: isHindi ? 'सुझाया गया दैनिक सेवन' : 'Suggested daily intake',
       accent: 'green',
       progress: stats.requiredProtein ? clampPercent(today.protein, stats.requiredProtein) : 0
     }
@@ -251,7 +256,7 @@ export default function Dashboard(){
         const list = Array.isArray(res?.data) ? res.data : []
         setBoostFoodsByNutrient((prev) => ({ ...prev, [nutrient]: list }))
       } catch {
-        if (!cancelled) setBoostError('Unable to load food suggestions right now.')
+        if (!cancelled) setBoostError(isHindi ? 'अभी फूड सुझाव लोड नहीं हो सके।' : 'Unable to load food suggestions right now.')
       } finally {
         if (!cancelled) setBoostLoading(false)
       }
@@ -269,24 +274,24 @@ export default function Dashboard(){
     <div className="page dashboard dashboard-page">
       <section className="dashboard-hero card">
         <div className="dashboard-hero-copy">
-          <span className="dashboard-eyebrow">Daily overview</span>
-          <h1>Dashboard</h1>
+          <span className="dashboard-eyebrow">{isHindi ? 'दैनिक सारांश' : 'Daily overview'}</span>
+          <h1>{isHindi ? 'डैशबोर्ड' : 'Dashboard'}</h1>
           <p className="muted">
-            A clean view of your health targets, profile signals, and what deserves attention today.
+            {isHindi ? 'आपके स्वास्थ्य लक्ष्य, प्रोफ़ाइल संकेत और आज किन चीज़ों पर ध्यान दें, इसका साफ़ दृश्य।' : 'A clean view of your health targets, profile signals, and what deserves attention today.'}
           </p>
 
           <div className="dashboard-hero-badges">
             <span className="dashboard-badge">{metricCards[0].note}</span>
-            <span className="dashboard-badge">Simple, focused progress tracking</span>
+            <span className="dashboard-badge">{isHindi ? 'सरल और केंद्रित प्रगति ट्रैकिंग' : 'Simple, focused progress tracking'}</span>
           </div>
         </div>
 
         <div className="dashboard-hero-visual" aria-hidden="true">
           <div className="dashboard-orbit">
             <div className="dashboard-orbit-core">
-              <span className="dashboard-orbit-label">Today</span>
+              <span className="dashboard-orbit-label">{isHindi ? 'आज' : 'Today'}</span>
               <strong>{loading ? '-' : formatValue(today.calories)}</strong>
-              <span className="dashboard-orbit-caption">calories</span>
+              <span className="dashboard-orbit-caption">{isHindi ? 'कैलोरी' : 'calories'}</span>
             </div>
           </div>
           <div className="dashboard-hero-mini-stats">
@@ -295,11 +300,11 @@ export default function Dashboard(){
               className="dashboard-hero-mini-btn"
               onClick={() => setActiveBoostMetric({
                 nutrient: 'energy',
-                title: 'Calorie remaining',
-                remaining: `${Math.round(calorieGap)} kcal remaining`
+                title: isHindi ? 'बची हुई कैलोरी' : 'Calorie remaining',
+                remaining: isHindi ? `${Math.round(calorieGap)} kcal शेष` : `${Math.round(calorieGap)} kcal remaining`
               })}
             >
-              <span>Calorie Remaining</span>
+              <span>{isHindi ? 'शेष कैलोरी' : 'Calorie Remaining'}</span>
               <strong>{loading ? '-' : formatValue(Math.round(calorieGap), ' kcal')}</strong>
             </button>
             <button
@@ -307,13 +312,13 @@ export default function Dashboard(){
               className="dashboard-hero-mini-btn"
               onClick={() => setActiveBoostMetric({
                 nutrient: 'protein',
-                title: 'Protein consumed today',
+                title: isHindi ? 'आज लिया गया प्रोटीन' : 'Protein consumed today',
                 remaining: stats.requiredProtein
-                  ? `${Math.round(today.protein || 0)} g / ${Math.round(stats.requiredProtein)} g target`
-                  : `${Math.round(today.protein || 0)} g logged today`
+                  ? (isHindi ? `${Math.round(today.protein || 0)} g / ${Math.round(stats.requiredProtein)} g लक्ष्य` : `${Math.round(today.protein || 0)} g / ${Math.round(stats.requiredProtein)} g target`)
+                  : (isHindi ? `${Math.round(today.protein || 0)} g आज लॉग` : `${Math.round(today.protein || 0)} g logged today`)
               })}
             >
-              <span>Protein Consumed</span>
+              <span>{isHindi ? 'प्रोटीन सेवन' : 'Protein Consumed'}</span>
               <strong>{loading ? '-' : formatValue(Math.round(today.protein || 0), 'g')}</strong>
             </button>
           </div>
@@ -344,13 +349,13 @@ export default function Dashboard(){
         <Card className="activity-card dashboard-panel">
           <div className="dashboard-panel-header">
             <div>
-              <h3>Recent activity</h3>
-              <p className="muted">Your latest logs in one place.</p>
+              <h3>{isHindi ? 'हाल की गतिविधि' : 'Recent activity'}</h3>
+              <p className="muted">{isHindi ? 'आपकी नवीनतम लॉग एक ही जगह।' : 'Your latest logs in one place.'}</p>
             </div>
           </div>
 
           <div className="dashboard-callout">
-            <strong>Timeline</strong>
+            <strong>{isHindi ? 'टाइमलाइन' : 'Timeline'}</strong>
             {activityItems.length ? (
               <ul className="activity-list">
                 {activityItems.map((item) => (
@@ -362,7 +367,7 @@ export default function Dashboard(){
               </ul>
             ) : (
               <p className="muted">
-                No recent activity is available yet. Once you start logging meals, weight, or daily data, your timeline will appear here.
+                {isHindi ? 'अभी कोई हाल की गतिविधि उपलब्ध नहीं है। लॉग शुरू करने पर टाइमलाइन यहाँ दिखेगी।' : 'No recent activity is available yet. Once you start logging meals, weight, or daily data, your timeline will appear here.'}
               </p>
             )}
           </div>
@@ -371,8 +376,8 @@ export default function Dashboard(){
         <Card className="subs-card dashboard-panel dashboard-profile-panel">
           <div className="dashboard-panel-header">
             <div>
-              <h3>Summary</h3>
-              <p className="muted">Your recent daily averages at a glance.</p>
+              <h3>{isHindi ? 'सारांश' : 'Summary'}</h3>
+              <p className="muted">{isHindi ? 'हाल के दैनिक औसत एक नज़र में।' : 'Your recent daily averages at a glance.'}</p>
             </div>
           </div>
 
@@ -402,20 +407,20 @@ export default function Dashboard(){
             <button
               type="button"
               className="dashboard-modal-close"
-              aria-label="Close food suggestions"
+              aria-label={isHindi ? 'फूड सुझाव बंद करें' : 'Close food suggestions'}
               onClick={() => setActiveBoostMetric(null)}
             >
               ×
             </button>
 
             <div className="dashboard-modal-head">
-              <span className="dashboard-eyebrow">Quick Food Boost</span>
+              <span className="dashboard-eyebrow">{isHindi ? 'क्विक फूड बूस्ट' : 'Quick Food Boost'}</span>
               <h3 id="dashboard-boost-title">{activeBoostMetric.title}</h3>
               <p className="muted">{activeBoostMetric.remaining}</p>
             </div>
 
             <div className="dashboard-modal-body">
-              {boostLoading ? <p className="muted">Loading food suggestions...</p> : null}
+              {boostLoading ? <p className="muted">{isHindi ? 'फूड सुझाव लोड हो रहे हैं...' : 'Loading food suggestions...'}</p> : null}
               {boostError ? <p className="muted">{boostError}</p> : null}
 
               {!boostLoading && !boostError ? (
@@ -424,14 +429,14 @@ export default function Dashboard(){
                     <div className="guide-food-item" key={`${activeBoostMetric.nutrient}-${food.name}`}>
                       <div>
                         <strong>{food.name}</strong>
-                        <span>{food.nameHindi || 'Popular in your food library'}</span>
+                        <span>{food.nameHindi || (isHindi ? 'आपकी फूड लाइब्रेरी में लोकप्रिय' : 'Popular in your food library')}</span>
                       </div>
                       <div className="guide-food-metric">
                         <em>{food.highlight || '-'}</em>
-                        <small>{food.category} · {food.dietType === 'non_veg' ? 'non-veg' : 'veg'}</small>
+                        <small>{food.category} · {food.dietType === 'non_veg' ? (isHindi ? 'मांसाहारी' : 'non-veg') : (isHindi ? 'शाकाहारी' : 'veg')}</small>
                       </div>
                     </div>
-                  )) : <p className="muted">No strong matches found right now.</p>}
+                  )) : <p className="muted">{isHindi ? 'अभी उपयुक्त सुझाव नहीं मिले।' : 'No strong matches found right now.'}</p>}
                 </div>
               ) : null}
             </div>

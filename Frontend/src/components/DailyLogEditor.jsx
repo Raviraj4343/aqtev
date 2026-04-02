@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import Input from './ui/Input'
 import Button from './ui/Button'
 import FoodSearch from './FoodSearch'
+import { useLanguage } from '../contexts/LanguageContext'
 
 const WATER_OPTIONS = ['', '<1L', '1-2L', '2-3L', '3L+']
 const MEAL_OPTIONS = ['breakfast', 'lunch', 'dinner', 'snacks']
@@ -26,6 +27,8 @@ export default function DailyLogEditor({
   onVitalsChange,
   onSave,
 }){
+  const { language } = useLanguage()
+  const isHindi = language === 'hi'
   const [status, setStatus] = useState('')
   const [saving, setSaving] = useState(false)
   const [pendingFood, setPendingFood] = useState(null)
@@ -47,7 +50,7 @@ export default function DailyLogEditor({
     if (!pendingFood) return
     const quantity = Math.max(1, Number(pendingQuantity) || 1)
     if (onAddFood) onAddFood(pendingFood, mealType, quantity)
-    setStatus(`${pendingFood.name} added to ${mealType}.`)
+    setStatus(isHindi ? `${pendingFood.name} को ${mealType} में जोड़ा गया।` : `${pendingFood.name} added to ${mealType}.`)
     setPendingFood(null)
     setPendingQuantity('1')
   }
@@ -73,15 +76,15 @@ export default function DailyLogEditor({
       setSaving(true)
       setStatus('')
       await onSave(payload)
-      setStatus('Daily log saved.')
+      setStatus(isHindi ? 'डेली लॉग सहेजा गया।' : 'Daily log saved.')
     } catch (err) {
-      setStatus(err?.payload?.message || err?.message || 'Unable to save daily log.')
+      setStatus(err?.payload?.message || err?.message || (isHindi ? 'डेली लॉग सहेजा नहीं जा सका।' : 'Unable to save daily log.'))
     } finally {
       setSaving(false)
     }
   }
 
-  if (loading) return <div className="muted">Loading...</div>
+  if (loading) return <div className="muted">{isHindi ? 'लोड हो रहा है...' : 'Loading...'}</div>
 
   return (
     <div className="daily-editor">
@@ -90,21 +93,21 @@ export default function DailyLogEditor({
           <select
             value={vitals.waterIntake}
             onChange={(e) => onVitalsChange && onVitalsChange({ ...vitals, waterIntake: e.target.value })}
-            aria-label="Water intake"
+            aria-label={isHindi ? 'पानी का सेवन' : 'Water intake'}
           >
-            <option value="">Water</option>
+            <option value="">{isHindi ? 'पानी' : 'Water'}</option>
             {WATER_OPTIONS.filter(Boolean).map((option) => (
               <option key={option} value={option}>{option}</option>
             ))}
           </select>
-          <div className="field-hint">Choose the closest daily range.</div>
+          <div className="field-hint">{isHindi ? 'दिनभर का सबसे नज़दीकी रेंज चुनें।' : 'Choose the closest daily range.'}</div>
         </div>
-        <Input label="Sleep (hours)" value={vitals.sleepHours} onChange={e => onVitalsChange && onVitalsChange({ ...vitals, sleepHours: e.target.value })} type="number" min="0" max="24" />
-        <Input label="Steps" value={vitals.steps} onChange={e => onVitalsChange && onVitalsChange({ ...vitals, steps: e.target.value })} type="number" min="0" />
+        <Input label={isHindi ? 'नींद (घंटे)' : 'Sleep (hours)'} value={vitals.sleepHours} onChange={e => onVitalsChange && onVitalsChange({ ...vitals, sleepHours: e.target.value })} type="number" min="0" max="24" />
+        <Input label={isHindi ? 'कदम' : 'Steps'} value={vitals.steps} onChange={e => onVitalsChange && onVitalsChange({ ...vitals, steps: e.target.value })} type="number" min="0" />
       </div>
 
       <div className="meals">
-        <h4>Meals</h4>
+        <h4>{isHindi ? 'भोजन' : 'Meals'}</h4>
         <div className="feature-chip-row">
           {MEAL_OPTIONS.map((type) => (
             <button
@@ -113,19 +116,19 @@ export default function DailyLogEditor({
               className={`feature-chip ${mealType === type ? 'active' : ''}`}
               onClick={() => onMealTypeChange && onMealTypeChange(type)}
             >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
+                {type === 'breakfast' ? (isHindi ? 'नाश्ता' : 'Breakfast') : type === 'lunch' ? (isHindi ? 'दोपहर का भोजन' : 'Lunch') : type === 'dinner' ? (isHindi ? 'रात का भोजन' : 'Dinner') : (isHindi ? 'स्नैक्स' : 'Snacks')}
             </button>
           ))}
         </div>
 
-        <FoodSearch onSelect={handleSelectFood} placeholder={`Search foods for ${mealType}...`} />
+          <FoodSearch onSelect={handleSelectFood} placeholder={isHindi ? `${mealType === 'breakfast' ? 'नाश्ता' : mealType === 'lunch' ? 'दोपहर का भोजन' : mealType === 'dinner' ? 'रात का भोजन' : 'स्नैक्स'} के लिए खाद्य पदार्थ खोजें...` : `Search foods for ${mealType}...`} />
 
         {pendingFood ? (
           <div className="meal-add-card">
             <div className="meal-add-copy">
               <strong>{pendingFood.name}</strong>
               <span>
-                {pendingFood.caloriesPerUnit} kcal • {pendingFood.proteinPerUnit || 0} g protein • per {pendingFood.unit}
+                {pendingFood.caloriesPerUnit} kcal • {pendingFood.proteinPerUnit || 0} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'} • {isHindi ? 'प्रति' : 'per'} {pendingFood.unit}
               </span>
             </div>
             <div className="meal-add-controls">
@@ -135,14 +138,14 @@ export default function DailyLogEditor({
                 min="1"
                 value={pendingQuantity}
                 onChange={(e) => setPendingQuantity(e.target.value)}
-                aria-label={`Quantity for ${pendingFood.name}`}
+                aria-label={isHindi ? `${pendingFood.name} की मात्रा` : `Quantity for ${pendingFood.name}`}
               />
               <button
                 type="button"
                 className="meal-add-btn"
                 onClick={handleAddFood}
               >
-                Add
+                {isHindi ? 'जोड़ें' : 'Add'}
               </button>
             </div>
           </div>
@@ -153,7 +156,7 @@ export default function DailyLogEditor({
 
       <div className="actions" style={{ marginTop: 12 }}>
         <Button variant="primary" onClick={save} disabled={saving}>
-          {saving ? 'Saving...' : 'Save'}
+          {saving ? (isHindi ? 'सहेजा जा रहा है...' : 'Saving...') : (isHindi ? 'सहेजें' : 'Save')}
         </Button>
       </div>
     </div>

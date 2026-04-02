@@ -4,8 +4,11 @@ import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
 import * as api from '../utils/api'
 import WeightChart from '../components/WeightChart'
+import { useLanguage } from '../contexts/LanguageContext'
 
 export default function Weight(){
+  const { language } = useLanguage()
+  const isHindi = language === 'hi'
   const [history, setHistory] = useState([])
   const [trend, setTrend] = useState(null)
   const [weekly, setWeekly] = useState(null)
@@ -39,15 +42,15 @@ export default function Weight(){
   const latestWeight = history.length ? history[history.length - 1]?.weightKg : null
 
   const summary = useMemo(() => [
-    { label: 'Latest weight', value: latestWeight ?? '-', suffix: latestWeight ? 'kg' : '' },
-    { label: 'Entries', value: history.length, suffix: '30 days' },
-    { label: 'Weekly change', value: weekly?.weeklyChange ?? '-', suffix: weekly?.weeklyChange || weekly?.weeklyChange === 0 ? 'kg' : '' }
-  ], [history.length, latestWeight, weekly])
+    { label: isHindi ? 'नवीनतम वज़न' : 'Latest weight', value: latestWeight ?? '-', suffix: latestWeight ? 'kg' : '' },
+    { label: isHindi ? 'एंट्री' : 'Entries', value: history.length, suffix: isHindi ? '30 दिन' : '30 days' },
+    { label: isHindi ? 'साप्ताहिक बदलाव' : 'Weekly change', value: weekly?.weeklyChange ?? '-', suffix: weekly?.weeklyChange || weekly?.weeklyChange === 0 ? 'kg' : '' }
+  ], [history.length, isHindi, latestWeight, weekly])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.weightKg) {
-      setStatus('Enter a valid weight to save.')
+      setStatus(isHindi ? 'सहेजने के लिए सही वज़न दर्ज करें।' : 'Enter a valid weight to save.')
       return
     }
 
@@ -59,10 +62,10 @@ export default function Weight(){
         note: form.note || undefined
       })
       setForm({ weightKg: '', note: '' })
-      setStatus('Weight saved successfully.')
+      setStatus(isHindi ? 'वज़न सफलतापूर्वक सहेजा गया।' : 'Weight saved successfully.')
       await load()
     } catch (err) {
-      setStatus(err?.payload?.message || err.message || 'Unable to save weight.')
+      setStatus(err?.payload?.message || err.message || (isHindi ? 'वज़न सहेजा नहीं जा सका।' : 'Unable to save weight.'))
     } finally {
       setSaving(false)
     }
@@ -72,17 +75,17 @@ export default function Weight(){
     <div className="page feature-page feature-weight">
       <section className="feature-hero card">
         <div className="feature-hero-copy">
-          <span className="feature-eyebrow">Weight</span>
-          <h1>Logs and trends over time</h1>
+          <span className="feature-eyebrow">{isHindi ? 'वज़न' : 'Weight'}</span>
+          <h1>{isHindi ? 'समय के साथ लॉग और रुझान' : 'Logs and trends over time'}</h1>
           <p className="muted">
-            Keep your trend line simple, see your weekly change, and add today&apos;s measurement without leaving the page.
+            {isHindi ? 'अपनी प्रगति लाइन सरल रखें, साप्ताहिक बदलाव देखें और आज का माप यहीं जोड़ें।' : 'Keep your trend line simple, see your weekly change, and add today\'s measurement without leaving the page.'}
           </p>
         </div>
         <div className="feature-hero-aside">
-          <span className="feature-date-chip">Last 30 days</span>
+          <span className="feature-date-chip">{isHindi ? 'पिछले 30 दिन' : 'Last 30 days'}</span>
           <div className="feature-orbit feature-orbit-green">
             <strong>{loading ? '-' : latestWeight ?? '-'}</strong>
-            <span>{latestWeight ? 'kg current' : 'no entries yet'}</span>
+            <span>{latestWeight ? (isHindi ? 'वर्तमान किग्रा' : 'kg current') : (isHindi ? 'अभी कोई एंट्री नहीं' : 'no entries yet')}</span>
           </div>
         </div>
       </section>
@@ -101,8 +104,8 @@ export default function Weight(){
         <Card className="feature-main-panel">
           <div className="feature-panel-head">
             <div>
-              <h3>Trend view</h3>
-              <p className="muted">Review your recent entries and weekly movement at a glance.</p>
+              <h3>{isHindi ? 'ट्रेंड दृश्य' : 'Trend view'}</h3>
+              <p className="muted">{isHindi ? 'हाल की एंट्री और साप्ताहिक बदलाव एक नज़र में देखें।' : 'Review your recent entries and weekly movement at a glance.'}</p>
             </div>
           </div>
           <WeightChart data={history} loading={loading} />
@@ -112,30 +115,30 @@ export default function Weight(){
         <Card className="feature-side-panel">
           <div className="feature-panel-head">
             <div>
-              <h3>Log today&apos;s weight</h3>
-              <p className="muted">Add today&apos;s reading and keep your progress up to date.</p>
+              <h3>{isHindi ? 'आज का वज़न लॉग करें' : "Log today's weight"}</h3>
+              <p className="muted">{isHindi ? 'आज की रीडिंग जोड़ें और प्रगति अपडेट रखें।' : "Add today's reading and keep your progress up to date."}</p>
             </div>
           </div>
 
           <form className="feature-form-stack" onSubmit={handleSubmit}>
             <Input
               id="weight-kg"
-              label="Weight (kg)"
+              label={isHindi ? 'वज़न (किग्रा)' : 'Weight (kg)'}
               type="number"
               value={form.weightKg}
               onChange={(e) => setForm((prev) => ({ ...prev, weightKg: e.target.value }))}
             />
             <Input
               id="weight-note"
-              label="Note (optional)"
+              label={isHindi ? 'नोट (वैकल्पिक)' : 'Note (optional)'}
               value={form.note}
               onChange={(e) => setForm((prev) => ({ ...prev, note: e.target.value }))}
             />
-            <Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save weight'}</Button>
+            <Button type="submit" disabled={saving}>{saving ? (isHindi ? 'सहेजा जा रहा है...' : 'Saving...') : (isHindi ? 'वज़न सहेजें' : 'Save weight')}</Button>
           </form>
 
           {status ? <div className="feature-inline-note">{status}</div> : null}
-          {weekly?.message ? <div className="feature-empty compact"><strong>Weekly summary</strong><p className="muted">{weekly.message}</p></div> : null}
+          {weekly?.message ? <div className="feature-empty compact"><strong>{isHindi ? 'साप्ताहिक सारांश' : 'Weekly summary'}</strong><p className="muted">{weekly.message}</p></div> : null}
         </Card>
       </section>
     </div>

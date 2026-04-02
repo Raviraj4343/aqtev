@@ -2,6 +2,7 @@ import React from 'react'
 import Brand from './Brand'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import ConfirmationModal from './ConfirmationModal'
 import * as api from '../utils/api'
 
@@ -10,8 +11,8 @@ const SHOW_LIVE_SUGGESTION_UI = false
 const baseItems = [
   {
     to: '/dashboard',
-    label: 'Dashboard',
-    description: 'Overview and recent activity',
+    label: 'sidebar.dashboardLabel',
+    description: 'sidebar.dashboardDescription',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4 13.5h6V20H4v-6.5Zm10-9.5h6V20h-6V4Zm-10 0h6v6.5H4V4Z" />
@@ -23,8 +24,8 @@ const baseItems = [
 const authItems = [
   {
     to: '/daily',
-    label: 'Daily Log',
-    description: 'Meals, vitals, and progress',
+    label: 'sidebar.dailyLabel',
+    description: 'sidebar.dailyDescription',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M7 3h10a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2Zm2 4v2h6V7H9Zm0 4v2h6v-2H9Z" />
@@ -33,8 +34,8 @@ const authItems = [
   },
   {
     to: '/guide',
-    label: 'Guide',
-    description: 'Personalized health report',
+    label: 'sidebar.guideLabel',
+    description: 'sidebar.guideDescription',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M6 4h12a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 0 1 2-2Zm2 4v2h8V8H8Zm0 4v2h5v-2H8Z" />
@@ -43,8 +44,8 @@ const authItems = [
   },
   {
     to: '/insights',
-    label: 'Insights',
-    description: 'Summaries and recommendations',
+    label: 'sidebar.insightsLabel',
+    description: 'sidebar.insightsDescription',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M5 19h14v2H5v-2Zm1-3.5 3.5-3.5 2.5 2.5L17 9l1.5 1.5-6.5 6.5-2.5-2.5L7.5 17 6 15.5Z" />
@@ -53,8 +54,8 @@ const authItems = [
   },
   {
     to: '/foods',
-    label: 'Foods',
-    description: 'Search and browse nutrition data',
+    label: 'sidebar.foodsLabel',
+    description: 'sidebar.foodsDescription',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M8 3c1.1 0 2 .9 2 2v4a2 2 0 1 1-4 0V5c0-1.1.9-2 2-2Zm7 0h2v7a4 4 0 0 1-3 3.87V21h-2v-7.13A4 4 0 0 1 9 10V3h2v7a2 2 0 1 0 4 0V3Z" />
@@ -63,8 +64,8 @@ const authItems = [
   },
   {
     to: '/weight',
-    label: 'Weight',
-    description: 'Logs and trends over time',
+    label: 'sidebar.weightLabel',
+    description: 'sidebar.weightDescription',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 5a7 7 0 0 0-7 7v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5a7 7 0 0 0-7-7Zm0 2a5 5 0 0 1 4.9 4H7.1A5 5 0 0 1 12 7Zm0 6a1.75 1.75 0 1 1-1.75 1.75A1.75 1.75 0 0 1 12 13Z" />
@@ -73,8 +74,8 @@ const authItems = [
   },
   {
     to: '/profile',
-    label: 'Profile',
-    description: 'Personal details and goals',
+    label: 'sidebar.profileLabel',
+    description: 'sidebar.profileDescription',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z" />
@@ -85,6 +86,7 @@ const authItems = [
 
 export default function Sidebar({ isOpen = false, onClose }){
   const { user, logout } = useAuth() || {}
+  const { t } = useLanguage()
   const navigate = useNavigate()
   const [showSignOutConfirm, setShowSignOutConfirm] = React.useState(false)
   const [showLiveModal, setShowLiveModal] = React.useState(false)
@@ -117,7 +119,7 @@ export default function Sidebar({ isOpen = false, onClose }){
   const handleGetLiveSuggestion = async () => {
     const prompt = liveInput.trim()
     if (!prompt) {
-      setLiveError('Please type your question first.')
+      setLiveError(t('sidebar.askQuestionFirst'))
       return
     }
     if (liveLoading) return
@@ -164,7 +166,7 @@ export default function Sidebar({ isOpen = false, onClose }){
         id="mobile-navigation"
         className={cls.join(' ')}
         aria-hidden={!isOpen}
-        aria-label="Primary navigation"
+        aria-label={t('sidebar.primaryNavigation')}
         role="dialog"
         aria-modal="true"
       >
@@ -173,7 +175,7 @@ export default function Sidebar({ isOpen = false, onClose }){
           <button
             type="button"
             className="sidebar-close"
-            aria-label="Close menu"
+            aria-label={t('sidebar.closeMenu')}
             onClick={onClose}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -183,8 +185,8 @@ export default function Sidebar({ isOpen = false, onClose }){
         </div>
 
         <div className="sidebar-body">
-          <div className="sidebar-section-label">Navigation</div>
-          <nav className="nav" role="navigation" aria-label="Main menu">
+          <div className="sidebar-section-label">{t('sidebar.navigation')}</div>
+          <nav className="nav" role="navigation" aria-label={t('sidebar.primaryNavigation')}>
             {visibleItems.map(item => (
               <NavLink
                 key={item.to}
@@ -194,8 +196,8 @@ export default function Sidebar({ isOpen = false, onClose }){
               >
                 <span className="nav-item-icon">{item.icon}</span>
                 <span className="nav-item-copy">
-                  <span className="nav-item-label">{item.label}</span>
-                  <span className="nav-item-description">{item.description}</span>
+                  <span className="nav-item-label">{t(item.label)}</span>
+                  <span className="nav-item-description">{t(item.description)}</span>
                 </span>
               </NavLink>
             ))}
@@ -213,8 +215,8 @@ export default function Sidebar({ isOpen = false, onClose }){
                 </svg>
               </span>
               <span className="nav-item-copy">
-                <span className="nav-item-label">Live Suggestion</span>
-                <span className="nav-item-description">Open chatbot prompt popup</span>
+                <span className="nav-item-label">{t('sidebar.liveSuggestionLabel')}</span>
+                <span className="nav-item-description">{t('sidebar.liveSuggestionDescription')}</span>
               </span>
             </button>
           ) : null}
@@ -222,7 +224,7 @@ export default function Sidebar({ isOpen = false, onClose }){
 
         <div className="sidebar-footer">
           {user ? (
-            <div className="user-info" aria-label="Signed in account">
+            <div className="user-info" aria-label={t('sidebar.signedInAccount')}>
               <div className="user-meta">
                 <div className="user-avatar" aria-hidden="true">
                   {user.avatarUrl ? (
@@ -244,11 +246,11 @@ export default function Sidebar({ isOpen = false, onClose }){
                 className="btn-ghost"
                 onClick={() => setShowSignOutConfirm(true)}
               >
-                Sign out
+                {t('sidebar.signOut')}
               </button>
             </div>
           ) : (
-            <div className="sidebar-guest-note">Sign in to access logging, tracking, and insights.</div>
+            <div className="sidebar-guest-note">{t('sidebar.guestNote')}</div>
           )}
         </div>
       </aside>
@@ -256,11 +258,11 @@ export default function Sidebar({ isOpen = false, onClose }){
       <ConfirmationModal
         open={showSignOutConfirm}
         tone="danger"
-        eyebrow="Secure Exit"
-        title="Sign out of your account?"
-        description="You'll be returned to the home page and can sign back in anytime."
-        confirmLabel="Sign out"
-        cancelLabel="Stay here"
+        eyebrow={t('sidebar.secureExit')}
+        title={t('sidebar.signOutTitle')}
+        description={t('sidebar.signOutDescription')}
+        confirmLabel={t('sidebar.signOut')}
+        cancelLabel={t('sidebar.stayHere')}
         onClose={() => setShowSignOutConfirm(false)}
         onConfirm={async () => {
           setShowSignOutConfirm(false)
@@ -282,36 +284,36 @@ export default function Sidebar({ isOpen = false, onClose }){
             <button
               type="button"
               className="sidebar-live-modal-close"
-              aria-label="Close live suggestion"
+              aria-label={t('sidebar.closeLiveSuggestion')}
               onClick={() => setShowLiveModal(false)}
             >
               x
             </button>
-            <h3 id="sidebar-live-modal-title">Live Suggestion</h3>
-            <p className="muted">Mini chat with temporary session context only.</p>
+            <h3 id="sidebar-live-modal-title">{t('sidebar.liveSuggestionTitle')}</h3>
+            <p className="muted">{t('sidebar.liveSuggestionHint')}</p>
 
             <div className="sidebar-live-head-row">
-              <button type="button" className="btn-ghost sidebar-live-new" onClick={handleNewChat}>New chat</button>
+              <button type="button" className="btn-ghost sidebar-live-new" onClick={handleNewChat}>{t('sidebar.newChat')}</button>
             </div>
 
             {liveError ? <div className="sidebar-live-error">{liveError}</div> : null}
 
             <div className="sidebar-chat-thread" role="log" aria-live="polite">
               {!chatMessages.length ? (
-                <div className="sidebar-chat-empty">Ask about budget meals, macros, workouts, or sleep.</div>
+                <div className="sidebar-chat-empty">{t('sidebar.emptyThread')}</div>
               ) : null}
 
               {chatMessages.map((message) => (
                 <div key={message.id} className={`sidebar-chat-bubble ${message.role === 'assistant' ? 'bot' : 'user'}`}>
-                  <strong>{message.role === 'assistant' ? 'AQTEV Coach' : 'You'}</strong>
+                  <strong>{message.role === 'assistant' ? t('sidebar.coachName') : t('sidebar.you')}</strong>
                   {message.role === 'assistant' ? <pre>{message.content}</pre> : <p>{message.content}</p>}
                 </div>
               ))}
 
               {liveLoading ? (
                 <div className="sidebar-chat-bubble bot sidebar-chat-typing">
-                  <strong>AQTEV Coach</strong>
-                  <p>Thinking...</p>
+                  <strong>{t('sidebar.coachName')}</strong>
+                  <p>{t('sidebar.thinking')}</p>
                 </div>
               ) : null}
 
@@ -321,7 +323,7 @@ export default function Sidebar({ isOpen = false, onClose }){
             <div className="sidebar-chat-compose">
               <textarea
                 className="sidebar-live-input"
-                placeholder="Send a message..."
+                placeholder={t('sidebar.sendMessage')}
                 value={liveInput}
                 onChange={(event) => {
                   setLiveInput(event.target.value)
@@ -342,7 +344,7 @@ export default function Sidebar({ isOpen = false, onClose }){
                 onClick={handleGetLiveSuggestion}
                 disabled={liveLoading}
               >
-                Send
+                {t('sidebar.send')}
               </button>
             </div>
           </div>

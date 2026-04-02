@@ -262,6 +262,10 @@ a:hover{color:var(--color-accent);text-decoration:underline}
 .profile-file-input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
 .profile-file-name{font-size:13px;color:var(--color-muted);word-break:break-word}
 .profile-upload-actions .btn-primary{margin-top:0}
+.profile-language-panel{display:grid;gap:8px;padding:16px 18px;border-radius:20px;background:rgba(233,239,241,0.72);border:1px solid rgba(233,239,241,0.66)}
+.profile-language-label{grid-column:auto;margin:0}
+.profile-language-panel select{min-height:48px;padding:0 14px;border-radius:14px;border:1px solid rgba(15,23,42,0.08);background:rgba(233,239,241,0.88);font:inherit;color:var(--color-text)}
+.profile-language-hint{font-size:12px;color:var(--color-muted)}
 .profile-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .profile-summary-card{padding:16px 18px;border-radius:20px;background:rgba(233,239,241,0.7);border:1px solid rgba(233,239,241,0.66);box-shadow:0 12px 24px rgba(11,31,36,0.06)}
 .profile-summary-label{display:block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(7,89,133,0.72);margin-bottom:8px}
@@ -746,6 +750,8 @@ a:hover{color:var(--color-accent);text-decoration:underline}
   .nav-auth-link{color:var(--color-primary);font-weight:600;text-decoration:none;padding:8px 12px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;height:44px}
   .nav-auth-link:hover{background:rgba(2,132,199,0.08)}
   .nav-guest-link{background:rgba(233,239,241,0.76);border:1px solid rgba(2,132,199,0.14);box-shadow:0 10px 24px rgba(11,31,36,0.05)}
+  .nav-lang-toggle{height:44px;min-width:56px;padding:0 12px;border-radius:12px;border:1px solid rgba(2,132,199,0.16);background:rgba(233,239,241,0.76);color:var(--color-primary);font-weight:800;font:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(11,31,36,0.05)}
+  .nav-lang-toggle:hover{background:rgba(233,239,241,0.94)}
 
   .topbar .btn-primary{margin-top:0;height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0 16px;border-radius:14px}
 

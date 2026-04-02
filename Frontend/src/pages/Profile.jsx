@@ -4,13 +4,10 @@ import Button from '../components/ui/Button'
 import ConfirmationModal from '../components/ConfirmationModal'
 import * as api from '../utils/api'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 
 const GENDERS = ['male', 'female', 'other']
-const GOALS = [
-  { v: 'weight_loss', l: 'Weight loss' },
-  { v: 'muscle_gain', l: 'Muscle gain' },
-  { v: 'maintain', l: 'Maintain' }
-]
+const GOALS = ['weight_loss', 'muscle_gain', 'maintain']
 const ACTIVITY = ['sedentary', 'light', 'moderate', 'active']
 const DIETS = ['veg', 'non_veg', 'mixed']
 
@@ -33,6 +30,7 @@ const prettify = (value = '') =>
 
 export default function Profile(){
   const { user, refresh } = useAuth() || {}
+  const { language, setLanguage, t } = useLanguage()
   const [avatarFile, setAvatarFile] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
   const [uploading, setUploading] = useState(false)
@@ -63,15 +61,15 @@ export default function Profile(){
 
   const validate = (values) => {
     const e = {}
-    if (!values.name?.trim() || values.name.trim().length < 2) e.name = 'Name must be at least 2 characters'
-    if (!values.age || values.age < 10 || values.age > 120) e.age = 'Age must be 10-120'
-    if (!GENDERS.includes(values.gender)) e.gender = 'Invalid gender'
-    if (!values.heightCm || values.heightCm < 50 || values.heightCm > 300) e.heightCm = 'Height 50-300 cm'
-    if (!values.weightKg || values.weightKg < 10 || values.weightKg > 500) e.weightKg = 'Weight 10-500 kg'
-    if (values.bodyFatPercent !== '' && (values.bodyFatPercent < 1 || values.bodyFatPercent > 70)) e.bodyFatPercent = 'Body fat 1-70%'
-    if (!GOALS.some((goal) => goal.v === values.goal)) e.goal = 'Invalid goal'
-    if (!ACTIVITY.includes(values.activityLevel)) e.activityLevel = 'Invalid activity level'
-    if (!DIETS.includes(values.dietPreference)) e.dietPreference = 'Invalid diet'
+    if (!values.name?.trim() || values.name.trim().length < 2) e.name = t('profile.validation.name')
+    if (!values.age || values.age < 10 || values.age > 120) e.age = t('profile.validation.age')
+    if (!GENDERS.includes(values.gender)) e.gender = t('profile.validation.gender')
+    if (!values.heightCm || values.heightCm < 50 || values.heightCm > 300) e.heightCm = t('profile.validation.height')
+    if (!values.weightKg || values.weightKg < 10 || values.weightKg > 500) e.weightKg = t('profile.validation.weight')
+    if (values.bodyFatPercent !== '' && (values.bodyFatPercent < 1 || values.bodyFatPercent > 70)) e.bodyFatPercent = t('profile.validation.bodyFat')
+    if (!GOALS.includes(values.goal)) e.goal = t('profile.validation.goal')
+    if (!ACTIVITY.includes(values.activityLevel)) e.activityLevel = t('profile.validation.activity')
+    if (!DIETS.includes(values.dietPreference)) e.dietPreference = t('profile.validation.diet')
     return e
   }
 
@@ -105,9 +103,9 @@ export default function Profile(){
       else await api.setupProfile(payload)
       await refresh()
       setIsEditing(false)
-      setStatus('Profile saved successfully.')
+      setStatus(t('profile.status.profileSaved'))
     } catch (err) {
-      setStatus(err?.payload?.message || err.message || 'Unable to save profile right now.')
+      setStatus(err?.payload?.message || err.message || t('profile.status.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -146,7 +144,7 @@ export default function Profile(){
 
   const handleAvatarUpload = async () => {
     if (!avatarFile) {
-      setStatus('Choose an image before uploading.')
+      setStatus(t('profile.status.chooseImage'))
       return
     }
 
@@ -156,9 +154,9 @@ export default function Profile(){
       await api.uploadAvatar(avatarFile)
       await refresh()
       setAvatarFile(null)
-      setStatus('Avatar uploaded successfully.')
+      setStatus(t('profile.status.avatarUploaded'))
     } catch (err) {
-      setStatus(err?.payload?.message || err.message || 'Upload failed.')
+      setStatus(err?.payload?.message || err.message || t('profile.status.uploadFailed'))
     } finally {
       setUploading(false)
     }
@@ -171,9 +169,9 @@ export default function Profile(){
   }
 
   const profileSummary = [
-    { label: 'Goal', value: prettify(user?.goal || form.goal) },
-    { label: 'Activity', value: prettify(user?.activityLevel || form.activityLevel) },
-    { label: 'Diet', value: prettify(user?.dietPreference || form.dietPreference) }
+    { label: t('profile.goal'), value: t(`profile.goalOptions.${user?.goal || form.goal}`, {}, prettify(user?.goal || form.goal)) },
+    { label: t('profile.activity'), value: t(`profile.activityOptions.${user?.activityLevel || form.activityLevel}`, {}, prettify(user?.activityLevel || form.activityLevel)) },
+    { label: t('profile.diet'), value: t(`profile.dietOptions.${user?.dietPreference || form.dietPreference}`, {}, prettify(user?.dietPreference || form.dietPreference)) }
   ]
 
   const showEditableForm = isEditing || !user?.profileCompleted
@@ -183,11 +181,11 @@ export default function Profile(){
       <div className="page profile-page">
         <div className="page-top profile-top">
           <div>
-            <h1>Profile</h1>
+            <h1>{t('profile.title')}</h1>
             <p className="muted">
               {user?.profileCompleted
-                ? 'Keep your health details current so your dashboard and insights stay accurate.'
-                : 'Complete your profile to unlock tailored recommendations and tracking.'}
+                ? t('profile.subtitleCompleted')
+                : t('profile.subtitlePending')}
             </p>
           </div>
         </div>
@@ -197,7 +195,7 @@ export default function Profile(){
             <div className="profile-avatar-wrap">
               <div className="profile-avatar">
                 {avatarPreview ? (
-                  <img src={avatarPreview} alt={`${user?.name || 'User'} avatar`} className="profile-avatar-image" />
+                  <img src={avatarPreview} alt={t('profile.avatarAlt', { name: user?.name || 'User' })} className="profile-avatar-image" />
                 ) : (
                   <span className="profile-avatar-fallback" aria-hidden="true">
                     {(user?.name || form.name || 'U').trim().charAt(0).toUpperCase()}
@@ -208,28 +206,37 @@ export default function Profile(){
               <div className="profile-avatar-actions">
                 <div className="profile-avatar-head">
                   <div className="profile-avatar-copy">
-                    <h2>{user?.name || form.name || 'Your profile'}</h2>
-                    <p>{user?.email || 'Add your details and a photo to personalize your account.'}</p>
+                    <h2>{user?.name || form.name || t('profile.yourProfile')}</h2>
+                    <p>{user?.email || t('profile.addDetailsHint')}</p>
                   </div>
                   {user?.profileCompleted && !isEditing ? (
                     <Button onClick={() => { setIsEditing(true); setStatus('') }} className="profile-edit-trigger">
-                      Edit
+                      {t('profile.edit')}
                     </Button>
                   ) : null}
                 </div>
 
                 <div className="profile-upload-row">
-                  <label htmlFor="avatar" className="profile-file-label">Choose image</label>
+                  <label htmlFor="avatar" className="profile-file-label">{t('profile.chooseImage')}</label>
                   <input id="avatar" className="profile-file-input" type="file" accept="image/*" onChange={(e) => handleAvatarChange(e.target.files?.[0])} />
-                  <span className="profile-file-name">{avatarFile ? avatarFile.name : 'PNG, JPG, or WEBP up to 5 MB'}</span>
+                  <span className="profile-file-name">{avatarFile ? avatarFile.name : t('profile.imageHint')}</span>
                 </div>
 
                 <div className="profile-upload-actions">
                   <Button onClick={handleAvatarUpload} disabled={uploading || !avatarFile}>
-                    {uploading ? 'Uploading...' : 'Upload avatar'}
+                    {uploading ? t('profile.uploading') : t('profile.uploadAvatar')}
                   </Button>
                 </div>
               </div>
+            </div>
+
+            <div className="profile-language-panel">
+              <label className="field-label profile-language-label">{t('profile.languagePreference')}</label>
+              <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+                <option value="en">{t('common.english')}</option>
+                <option value="hi">{t('common.hindi')}</option>
+              </select>
+              <div className="profile-language-hint">{t('profile.languageHint')}</div>
             </div>
 
             <div className="profile-summary-grid">
@@ -248,7 +255,7 @@ export default function Profile(){
             <form className="profile-form profile-form-panel" onSubmit={handleSubmit} noValidate>
             <Input
               id="profile-name"
-              label="Name"
+              label={t('profile.name')}
               value={form.name}
               onChange={(e) => handleChange('name', e.target.value)}
               className={errors.name ? 'error' : ''}
@@ -257,7 +264,7 @@ export default function Profile(){
 
             <Input
               id="profile-age"
-              label="Age"
+              label={t('profile.age')}
               type="number"
               value={form.age}
               onChange={(e) => handleChange('age', e.target.value === '' ? '' : Number(e.target.value))}
@@ -265,15 +272,15 @@ export default function Profile(){
             />
             {errors.age && <div className="error-text">{errors.age}</div>}
 
-            <label className="field-label">Gender</label>
+            <label className="field-label">{t('profile.gender')}</label>
             <select value={form.gender} onChange={(e) => handleChange('gender', e.target.value)} className={errors.gender ? 'error-select' : ''}>
-              {GENDERS.map((gender) => <option key={gender} value={gender}>{prettify(gender)}</option>)}
+              {GENDERS.map((gender) => <option key={gender} value={gender}>{t(`profile.genderOptions.${gender}`, {}, prettify(gender))}</option>)}
             </select>
             {errors.gender && <div className="error-text">{errors.gender}</div>}
 
             <Input
               id="profile-height"
-              label="Height (cm)"
+              label={t('profile.height')}
               type="number"
               value={form.heightCm}
               onChange={(e) => handleChange('heightCm', e.target.value === '' ? '' : Number(e.target.value))}
@@ -283,7 +290,7 @@ export default function Profile(){
 
             <Input
               id="profile-weight"
-              label="Weight (kg)"
+              label={t('profile.weight')}
               type="number"
               value={form.weightKg}
               onChange={(e) => handleChange('weightKg', e.target.value === '' ? '' : Number(e.target.value))}
@@ -293,7 +300,7 @@ export default function Profile(){
 
             <Input
               id="profile-body-fat"
-              label="Body fat % (optional)"
+              label={t('profile.bodyFat')}
               type="number"
               value={form.bodyFatPercent}
               onChange={(e) => handleChange('bodyFatPercent', e.target.value === '' ? '' : Number(e.target.value))}
@@ -301,31 +308,31 @@ export default function Profile(){
             />
             {errors.bodyFatPercent && <div className="error-text">{errors.bodyFatPercent}</div>}
 
-            <label className="field-label">Goal</label>
+            <label className="field-label">{t('profile.goal')}</label>
             <select value={form.goal} onChange={(e) => handleChange('goal', e.target.value)} className={errors.goal ? 'error-select' : ''}>
-              {GOALS.map((goal) => <option key={goal.v} value={goal.v}>{goal.l}</option>)}
+              {GOALS.map((goal) => <option key={goal} value={goal}>{t(`profile.goalOptions.${goal}`, {}, prettify(goal))}</option>)}
             </select>
             {errors.goal && <div className="error-text">{errors.goal}</div>}
 
-            <label className="field-label">Activity level</label>
+            <label className="field-label">{t('profile.activityLevel')}</label>
             <select value={form.activityLevel} onChange={(e) => handleChange('activityLevel', e.target.value)} className={errors.activityLevel ? 'error-select' : ''}>
-              {ACTIVITY.map((activity) => <option key={activity} value={activity}>{prettify(activity)}</option>)}
+              {ACTIVITY.map((activity) => <option key={activity} value={activity}>{t(`profile.activityOptions.${activity}`, {}, prettify(activity))}</option>)}
             </select>
             {errors.activityLevel && <div className="error-text">{errors.activityLevel}</div>}
 
-            <label className="field-label">Diet preference</label>
+            <label className="field-label">{t('profile.dietPreference')}</label>
             <select value={form.dietPreference} onChange={(e) => handleChange('dietPreference', e.target.value)} className={errors.dietPreference ? 'error-select' : ''}>
-              {DIETS.map((diet) => <option key={diet} value={diet}>{prettify(diet)}</option>)}
+              {DIETS.map((diet) => <option key={diet} value={diet}>{t(`profile.dietOptions.${diet}`, {}, prettify(diet))}</option>)}
             </select>
             {errors.dietPreference && <div className="error-text">{errors.dietPreference}</div>}
 
             <div className="profile-form-actions">
               <Button type="submit" variant="primary" disabled={saving}>
-                {saving ? 'Saving...' : user?.profileCompleted ? 'Save changes' : 'Save profile'}
+                {saving ? `${t('common.save')}...` : user?.profileCompleted ? t('profile.saveChanges') : t('profile.saveProfile')}
               </Button>
               {user?.profileCompleted ? (
                 <Button type="button" variant="ghost" className="profile-cancel-btn" onClick={handleCancelEdit}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               ) : null}
             </div>
@@ -334,28 +341,28 @@ export default function Profile(){
             <section className="profile-overview">
               <div className="profile-overview-grid">
                 <div className="profile-detail-card">
-                  <span className="profile-detail-label">Full name</span>
+                  <span className="profile-detail-label">{t('profile.fullName')}</span>
                   <strong>{user?.name}</strong>
                 </div>
                 <div className="profile-detail-card">
-                  <span className="profile-detail-label">Email</span>
+                  <span className="profile-detail-label">{t('profile.email')}</span>
                   <strong>{user?.email}</strong>
                 </div>
                 <div className="profile-detail-card">
-                  <span className="profile-detail-label">Age</span>
-                  <strong>{user?.age || 'Not set'}</strong>
+                  <span className="profile-detail-label">{t('profile.age')}</span>
+                  <strong>{user?.age || t('common.notSet')}</strong>
                 </div>
                 <div className="profile-detail-card">
-                  <span className="profile-detail-label">Gender</span>
-                  <strong>{prettify(user?.gender || 'Not set')}</strong>
+                  <span className="profile-detail-label">{t('profile.gender')}</span>
+                  <strong>{user?.gender ? t(`profile.genderOptions.${user.gender}`, {}, prettify(user.gender)) : t('common.notSet')}</strong>
                 </div>
                 <div className="profile-detail-card">
-                  <span className="profile-detail-label">Height</span>
-                  <strong>{user?.heightCm ? `${user.heightCm} cm` : 'Not set'}</strong>
+                  <span className="profile-detail-label">{t('profile.heightShort')}</span>
+                  <strong>{user?.heightCm ? `${user.heightCm} cm` : t('common.notSet')}</strong>
                 </div>
                 <div className="profile-detail-card">
-                  <span className="profile-detail-label">Weight</span>
-                  <strong>{user?.weightKg ? `${user.weightKg} kg` : 'Not set'}</strong>
+                  <span className="profile-detail-label">{t('profile.weightShort')}</span>
+                  <strong>{user?.weightKg ? `${user.weightKg} kg` : t('common.notSet')}</strong>
                 </div>
               </div>
             </section>
@@ -365,15 +372,15 @@ export default function Profile(){
 
       <ConfirmationModal
         open={Boolean(pendingSavePayload)}
-        eyebrow={user?.profileCompleted ? 'Review Changes' : 'Complete Profile'}
-        title={user?.profileCompleted ? 'Save these profile updates?' : 'Save your profile now?'}
+        eyebrow={user?.profileCompleted ? t('profile.reviewChanges') : t('profile.completeProfile')}
+        title={user?.profileCompleted ? t('profile.saveUpdatesTitle') : t('profile.saveProfileTitle')}
         description={
           user?.profileCompleted
-            ? 'Your dashboard, recommendations, and health tracking will refresh with these new details.'
-            : 'This will complete your profile and unlock personalized guidance across the app.'
+            ? t('profile.saveUpdatesDescription')
+            : t('profile.saveProfileDescription')
         }
-        confirmLabel={saving ? 'Saving...' : user?.profileCompleted ? 'Save changes' : 'Save profile'}
-        cancelLabel="Keep editing"
+        confirmLabel={saving ? `${t('common.save')}...` : user?.profileCompleted ? t('profile.saveChanges') : t('profile.saveProfile')}
+        cancelLabel={t('profile.keepEditing')}
         confirmDisabled={saving}
         cancelDisabled={saving}
         onClose={() => {

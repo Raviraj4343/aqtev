@@ -2,13 +2,16 @@ import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import Brand from './Brand'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 
 const PUBLIC_PATHS = ['/', '/guest-nutrition-check', '/signin', '/signup', '/auth', '/forgot', '/reset-password']
 
 export default function Navbar({ isSidebarOpen = false, onToggleSidebar }){
   const { pathname } = useLocation()
   const { user } = useAuth() || {}
+  const { t, language, setLanguage } = useLanguage()
   const showAuthLinks = !user && PUBLIC_PATHS.includes(pathname)
+  const nextLanguage = language === 'hi' ? 'en' : 'hi'
 
   return (
     <header className="topbar">
@@ -20,14 +23,22 @@ export default function Navbar({ isSidebarOpen = false, onToggleSidebar }){
         <div className="topbar-right">
           {showAuthLinks ? (
             <>
-              <Link to="/guest-nutrition-check" className="nav-auth-link nav-guest-link">Track</Link>
-              <Link to="/signin" className="nav-auth-link">Sign in</Link>
-              <Link to="/signup" className="btn-primary" style={{ marginTop: 0, padding: '10px 14px' }}>Sign up</Link>
+              <Link to="/guest-nutrition-check" className="nav-auth-link nav-guest-link">{t('navbar.track')}</Link>
+              <button
+                type="button"
+                className="nav-lang-toggle"
+                aria-label={language === 'hi' ? 'Switch language to English' : 'Switch language to Hindi'}
+                onClick={() => setLanguage(nextLanguage)}
+              >
+                {language === 'hi' ? 'EN' : 'हि'}
+              </button>
+              <Link to="/signin" className="nav-auth-link">{t('navbar.signIn')}</Link>
+              <Link to="/signup" className="btn-primary" style={{ marginTop: 0, padding: '10px 14px' }}>{t('navbar.signUp')}</Link>
             </>
           ) : (
             <button
               type="button"
-              aria-label="Open menu"
+              aria-label={t('navbar.openMenu')}
               aria-controls="mobile-navigation"
               aria-haspopup="dialog"
               aria-expanded={isSidebarOpen}

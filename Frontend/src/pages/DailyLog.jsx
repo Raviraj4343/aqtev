@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Card from '../components/ui/Card'
 import DailyLogEditor from '../components/DailyLogEditor'
 import * as api from '../utils/api'
+import { useLanguage } from '../contexts/LanguageContext'
 
 const formatDate = (date) =>
   date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
@@ -38,6 +39,8 @@ const normalizeMeals = (incomingMeals = []) =>
   }))
 
 export default function DailyLog(){
+  const { language } = useLanguage()
+  const isHindi = language === 'hi'
   const [log, setLog] = useState(null)
   const [loading, setLoading] = useState(true)
   const [mealType, setMealType] = useState('breakfast')
@@ -130,12 +133,12 @@ export default function DailyLog(){
   const summary = useMemo(() => {
     const meals = draftMeals || []
     return [
-      { label: 'Calories', value: Math.round(liveCalories), suffix: 'kcal' },
-      { label: 'Protein', value: Number(liveProtein.toFixed(1)), suffix: 'g' },
-      { label: 'Meals', value: meals.length, suffix: 'logged' },
-      { label: 'Steps', value: draftVitals.steps || 0, suffix: 'today' }
+      { label: isHindi ? 'कैलोरी' : 'Calories', value: Math.round(liveCalories), suffix: 'kcal' },
+      { label: isHindi ? 'प्रोटीन' : 'Protein', value: Number(liveProtein.toFixed(1)), suffix: 'g' },
+      { label: isHindi ? 'भोजन' : 'Meals', value: meals.length, suffix: isHindi ? 'लॉग' : 'logged' },
+      { label: isHindi ? 'कदम' : 'Steps', value: draftVitals.steps || 0, suffix: isHindi ? 'आज' : 'today' }
     ]
-  }, [draftMeals, draftVitals.steps, liveCalories, liveProtein])
+  }, [draftMeals, draftVitals.steps, isHindi, liveCalories, liveProtein])
 
   const mealTimeline = draftMeals.map((meal) => ({
     type: meal.type,
@@ -148,17 +151,17 @@ export default function DailyLog(){
     <div className="page feature-page feature-daily-log">
       <section className="feature-hero card">
         <div className="feature-hero-copy">
-          <span className="feature-eyebrow">Daily Log</span>
-          <h1>Meals, vitals, and progress</h1>
+          <span className="feature-eyebrow">{isHindi ? 'डेली लॉग' : 'Daily Log'}</span>
+          <h1>{isHindi ? 'भोजन, विटल्स और प्रगति' : 'Meals, vitals, and progress'}</h1>
           <p className="muted">
-            Capture what you ate, how you slept, your hydration, and your movement in one calm daily workspace.
+            {isHindi ? 'एक ही जगह पर दिनभर का भोजन, नींद, पानी और गतिविधि दर्ज करें।' : 'Capture what you ate, how you slept, your hydration, and your movement in one calm daily workspace.'}
           </p>
         </div>
         <div className="feature-hero-aside">
           <span className="feature-date-chip">{formatDate(new Date())}</span>
           <div className="feature-orbit feature-orbit-soft">
             <strong>{loading ? '-' : `${Math.round(liveCalories)}`}</strong>
-            <span>calories logged</span>
+            <span>{isHindi ? 'लॉग की गई कैलोरी' : 'calories logged'}</span>
           </div>
         </div>
       </section>
@@ -177,8 +180,8 @@ export default function DailyLog(){
         <Card className="feature-main-panel">
           <div className="feature-panel-head">
             <div>
-              <h3>Today&apos;s entry</h3>
-              <p className="muted">Update today&apos;s meals, water, sleep, and steps in one place.</p>
+              <h3>{isHindi ? 'आज की एंट्री' : "Today's entry"}</h3>
+              <p className="muted">{isHindi ? 'आज का भोजन, पानी, नींद और कदम एक ही जगह अपडेट करें।' : "Update today's meals, water, sleep, and steps in one place."}</p>
             </div>
           </div>
           <DailyLogEditor
@@ -198,8 +201,8 @@ export default function DailyLog(){
         <Card className="feature-side-panel">
           <div className="feature-panel-head">
             <div>
-              <h3>Meal snapshot</h3>
-              <p className="muted">Review added foods here and remove anything you do not want before saving.</p>
+              <h3>{isHindi ? 'मील स्नैपशॉट' : 'Meal snapshot'}</h3>
+              <p className="muted">{isHindi ? 'जोड़े गए खाद्य पदार्थ देखें और सहेजने से पहले अनचाहे आइटम हटाएं।' : 'Review added foods here and remove anything you do not want before saving.'}</p>
             </div>
           </div>
 
@@ -210,7 +213,7 @@ export default function DailyLog(){
                   <div className="snapshot-meal-head">
                     <div>
                       <strong>{String(meal.type).replace(/\b\w/g, (c) => c.toUpperCase())}</strong>
-                      <span>{meal.count} item{meal.count === 1 ? '' : 's'}</span>
+                      <span>{meal.count} {isHindi ? 'आइटम' : `item${meal.count === 1 ? '' : 's'}`}</span>
                     </div>
                     <div className="feature-list-metric">{meal.calories} kcal</div>
                   </div>
@@ -220,12 +223,12 @@ export default function DailyLog(){
                       <div key={item.draftId} className="snapshot-item">
                         <div className="snapshot-item-copy">
                           <strong>{item.foodName}</strong>
-                          <span>Qty {item.quantity} • {Math.round((item.caloriesPerUnit || 0) * item.quantity)} kcal</span>
+                          <span>{isHindi ? 'मात्रा' : 'Qty'} {item.quantity} • {Math.round((item.caloriesPerUnit || 0) * item.quantity)} kcal</span>
                         </div>
                         <button
                           type="button"
                           className="snapshot-remove-btn"
-                          aria-label={`Remove ${item.foodName}`}
+                          aria-label={isHindi ? `${item.foodName} हटाएं` : `Remove ${item.foodName}`}
                           onClick={() => handleRemoveFood(meal.type, item.draftId)}
                         >
                           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -240,8 +243,8 @@ export default function DailyLog(){
             </div>
           ) : (
             <div className="feature-empty">
-              <strong>No meals added yet</strong>
-              <p className="muted">Use the editor to search for foods and build your breakfast, lunch, dinner, or snack log.</p>
+              <strong>{isHindi ? 'अभी कोई भोजन नहीं जोड़ा गया' : 'No meals added yet'}</strong>
+              <p className="muted">{isHindi ? 'एडिटर से खाद्य पदार्थ खोजें और नाश्ता, दोपहर का भोजन, रात का भोजन या स्नैक्स लॉग बनाएं।' : 'Use the editor to search for foods and build your breakfast, lunch, dinner, or snack log.'}</p>
             </div>
           )}
         </Card>

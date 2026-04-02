@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import Input from './ui/Input'
 import * as api from '../utils/api'
+import { useLanguage } from '../contexts/LanguageContext'
 
 export default function FoodSearch({ onSelect, placeholder = 'Search foods...' }){
+  const { language } = useLanguage()
+  const isHindi = language === 'hi'
   const [q, setQ] = useState('')
   const [results, setResults] = useState([])
   const [allFoods, setAllFoods] = useState([])
@@ -74,7 +77,7 @@ export default function FoodSearch({ onSelect, placeholder = 'Search foods...' }
         if (!active) return
         setResults(localMatches)
         if (!localMatches.length) {
-          setError(err?.payload?.message || err?.message || 'Unable to search foods.')
+          setError(err?.payload?.message || err?.message || (isHindi ? 'खाद्य पदार्थ खोजे नहीं जा सके।' : 'Unable to search foods.'))
         }
       } finally {
         if (active) setLoading(false)
@@ -101,15 +104,15 @@ export default function FoodSearch({ onSelect, placeholder = 'Search foods...' }
         name="food-search"
         value={q}
         onChange={e => setQ(e.target.value)}
-        placeholder={placeholder}
+        placeholder={placeholder === 'Search foods...' ? (isHindi ? 'खाद्य पदार्थ खोजें...' : placeholder) : placeholder}
       />
 
       {(loading || error || results.length > 0 || q.trim()) ? (
         <div className="suggestions">
-          {loading ? <div className="muted suggestion-state">Searching...</div> : null}
+          {loading ? <div className="muted suggestion-state">{isHindi ? 'खोज जारी है...' : 'Searching...'}</div> : null}
           {!loading && error ? <div className="muted suggestion-state">{error}</div> : null}
           {!loading && !error && q.trim() && results.length === 0 ? (
-            <div className="muted suggestion-state">No foods found.</div>
+            <div className="muted suggestion-state">{isHindi ? 'कोई खाद्य पदार्थ नहीं मिला।' : 'No foods found.'}</div>
           ) : null}
           {results.map(r => {
             const meta = [

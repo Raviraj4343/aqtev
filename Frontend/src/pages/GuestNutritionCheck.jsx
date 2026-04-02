@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import Card from '../components/ui/Card'
 import FoodSearch from '../components/FoodSearch'
+import { useLanguage } from '../contexts/LanguageContext'
 
 const MEAL_OPTIONS = ['breakfast', 'lunch', 'dinner', 'snacks']
 
@@ -24,6 +25,8 @@ const collectVitaminSummary = (items) => {
 }
 
 export default function GuestNutritionCheck(){
+  const { language } = useLanguage()
+  const isHindi = language === 'hi'
   const [mealType, setMealType] = useState('breakfast')
   const [pendingFood, setPendingFood] = useState(null)
   const [pendingQuantity, setPendingQuantity] = useState('1')
@@ -114,19 +117,27 @@ export default function GuestNutritionCheck(){
     setShowReport(true)
   }
 
+  const mealLabel = (type) => {
+    if (!isHindi) return formatMeal(type)
+    if (type === 'breakfast') return 'नाश्ता'
+    if (type === 'lunch') return 'दोपहर का भोजन'
+    if (type === 'dinner') return 'रात का भोजन'
+    return 'स्नैक्स'
+  }
+
   return (
     <div className="page feature-page guest-check-page">
       <section className="guest-check-hero card">
         <div className="guest-check-copy">
-          <span className="feature-eyebrow">Guest Nutrition Check</span>
-          <h1>Track your whole day intake.</h1>
+          <span className="feature-eyebrow">{isHindi ? 'गेस्ट न्यूट्रिशन चेक' : 'Guest Nutrition Check'}</span>
+          <h1>{isHindi ? 'अपने पूरे दिन का सेवन ट्रैक करें।' : 'Track your whole day intake.'}</h1>
           <p className="muted">
-            Add foods meal by meal in one simple flow. When your day is complete, click Analyze to open the final report in a popup.
+            {isHindi ? 'एक आसान फ्लो में भोजन जोड़ें। दिन पूरा होने पर Analyze क्लिक करके रिपोर्ट देखें।' : 'Add foods meal by meal in one simple flow. When your day is complete, click Analyze to open the final report in a popup.'}
           </p>
         </div>
         <div className="guest-check-orbit">
           <strong>{totalItems}</strong>
-          <span>foods added today</span>
+          <span>{isHindi ? 'आज जोड़े गए खाद्य पदार्थ' : 'foods added today'}</span>
         </div>
       </section>
 
@@ -134,8 +145,8 @@ export default function GuestNutritionCheck(){
         <Card className="feature-main-panel guest-check-main">
           <div className="feature-panel-head">
             <div>
-              <h3>Add what you ate</h3>
-              <p className="muted">Pick a meal, search your foods, choose quantity, then build your full-day log.</p>
+              <h3>{isHindi ? 'जो आपने खाया वह जोड़ें' : 'Add what you ate'}</h3>
+              <p className="muted">{isHindi ? 'मील चुनें, खाद्य पदार्थ खोजें, मात्रा चुनें और पूरे दिन का लॉग बनाएं।' : 'Pick a meal, search your foods, choose quantity, then build your full-day log.'}</p>
             </div>
           </div>
 
@@ -147,19 +158,19 @@ export default function GuestNutritionCheck(){
                 className={`feature-chip ${mealType === type ? 'active' : ''}`}
                 onClick={() => setMealType(type)}
               >
-                {formatMeal(type)}
+                  {mealLabel(type)}
               </button>
             ))}
           </div>
 
-          <FoodSearch onSelect={handleSelectFood} placeholder={`Search foods for ${formatMeal(mealType)}...`} />
+            <FoodSearch onSelect={handleSelectFood} placeholder={isHindi ? `${mealLabel(mealType)} के लिए खाद्य पदार्थ खोजें...` : `Search foods for ${formatMeal(mealType)}...`} />
 
           {pendingFood ? (
             <div className="guest-pending-card">
               <div>
                 <strong>{pendingFood.name}</strong>
                 <span>
-                  {pendingFood.caloriesPerUnit} kcal • {pendingFood.proteinPerUnit || 0} g protein • per {pendingFood.unit}
+                  {pendingFood.caloriesPerUnit} kcal • {pendingFood.proteinPerUnit || 0} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'} • {isHindi ? 'प्रति' : 'per'} {pendingFood.unit}
                 </span>
               </div>
               <div className="guest-pending-actions">
@@ -169,9 +180,9 @@ export default function GuestNutritionCheck(){
                   value={pendingQuantity}
                   onChange={(e) => setPendingQuantity(e.target.value)}
                   className="meal-qty-input"
-                  aria-label={`Quantity for ${pendingFood.name}`}
+                  aria-label={isHindi ? `${pendingFood.name} की मात्रा` : `Quantity for ${pendingFood.name}`}
                 />
-                <button type="button" className="btn-primary guest-add-btn" onClick={handleAddFood}>Add To Day</button>
+                <button type="button" className="btn-primary guest-add-btn" onClick={handleAddFood}>{isHindi ? 'दिन में जोड़ें' : 'Add To Day'}</button>
               </div>
             </div>
           ) : null}
@@ -180,8 +191,8 @@ export default function GuestNutritionCheck(){
             {groupedEntries.length > 0 ? groupedEntries.map((group) => (
               <div key={group.type} className="guest-meal-card">
                 <div className="guest-meal-head">
-                  <strong>{formatMeal(group.type)}</strong>
-                  <span>{group.items.length} item{group.items.length === 1 ? '' : 's'}</span>
+                  <strong>{mealLabel(group.type)}</strong>
+                  <span>{group.items.length} {isHindi ? 'आइटम' : `item${group.items.length === 1 ? '' : 's'}`}</span>
                 </div>
                 <div className="guest-meal-items">
                   {group.items.map((item) => (
@@ -189,18 +200,18 @@ export default function GuestNutritionCheck(){
                       <div>
                         <strong>{item.name}</strong>
                         <span>
-                          Qty {item.quantity} • {Math.round(item.caloriesPerUnit * item.quantity)} kcal • {Number((item.proteinPerUnit * item.quantity).toFixed(1))} g protein
+                          {isHindi ? 'मात्रा' : 'Qty'} {item.quantity} • {Math.round(item.caloriesPerUnit * item.quantity)} kcal • {Number((item.proteinPerUnit * item.quantity).toFixed(1))} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'}
                         </span>
                       </div>
-                      <button type="button" className="guest-remove-btn" onClick={() => handleRemove(item.id)}>Remove</button>
+                      <button type="button" className="guest-remove-btn" onClick={() => handleRemove(item.id)}>{isHindi ? 'हटाएं' : 'Remove'}</button>
                     </div>
                   ))}
                 </div>
               </div>
             )) : (
               <div className="feature-empty compact">
-                <strong>No foods added yet</strong>
-                <p className="muted">Start with breakfast, lunch, dinner, or snacks and build your day from the search above.</p>
+                <strong>{isHindi ? 'अभी कोई खाद्य पदार्थ नहीं जोड़ा गया' : 'No foods added yet'}</strong>
+                <p className="muted">{isHindi ? 'नाश्ता, दोपहर का भोजन, रात का भोजन या स्नैक्स से शुरू करें।' : 'Start with breakfast, lunch, dinner, or snacks and build your day from the search above.'}</p>
               </div>
             )}
           </div>
@@ -209,33 +220,33 @@ export default function GuestNutritionCheck(){
         <Card className="feature-side-panel guest-check-side">
           <div className="feature-panel-head">
             <div>
-              <h3>Ready to analyze?</h3>
-              <p className="muted">We will show the full-day nutrition result only after you click Analyze.</p>
+              <h3>{isHindi ? 'विश्लेषण के लिए तैयार?' : 'Ready to analyze?'}</h3>
+              <p className="muted">{isHindi ? 'Analyze क्लिक करने के बाद पूरे दिन का पोषण परिणाम दिखेगा।' : 'We will show the full-day nutrition result only after you click Analyze.'}</p>
             </div>
           </div>
 
           <div className="guest-preview-grid">
             <div className="guest-preview-card">
-              <span>Meals logged</span>
+              <span>{isHindi ? 'लॉग किए गए मील' : 'Meals logged'}</span>
               <strong>{totalMeals}</strong>
             </div>
             <div className="guest-preview-card">
-              <span>Food entries</span>
+              <span>{isHindi ? 'फूड एंट्री' : 'Food entries'}</span>
               <strong>{totalItems}</strong>
             </div>
           </div>
 
           <div className="feature-empty compact">
-            <strong>What happens next</strong>
-            <p className="muted">The popup report will show calories, protein, carbs, fats, fiber, calcium, vitamin highlights, and meal-by-meal composition.</p>
+            <strong>{isHindi ? 'आगे क्या होगा' : 'What happens next'}</strong>
+            <p className="muted">{isHindi ? 'पॉपअप रिपोर्ट में कैलोरी, प्रोटीन, कार्ब्स, फैट्स, फाइबर, कैल्शियम और विटामिन दिखेंगे।' : 'The popup report will show calories, protein, carbs, fats, fiber, calcium, vitamin highlights, and meal-by-meal composition.'}</p>
           </div>
         </Card>
       </section>
 
       <div className="guest-action-bar">
         <div className="guest-action-bar-copy">
-          <strong>Ready to analyze your day?</strong>
-          <span>{totalMeals} meal{totalMeals === 1 ? '' : 's'} logged • {totalItems} food item{totalItems === 1 ? '' : 's'}</span>
+          <strong>{isHindi ? 'दिन का विश्लेषण करने के लिए तैयार?' : 'Ready to analyze your day?'}</strong>
+          <span>{totalMeals} {isHindi ? 'मील लॉग' : `meal${totalMeals === 1 ? '' : 's'} logged`} • {totalItems} {isHindi ? 'फूड आइटम' : `food item${totalItems === 1 ? '' : 's'}`}</span>
         </div>
         <button
           type="button"
@@ -243,7 +254,7 @@ export default function GuestNutritionCheck(){
           disabled={entries.length === 0}
           onClick={handleAnalyze}
         >
-          Analyze
+          {isHindi ? 'विश्लेषण करें' : 'Analyze'}
         </button>
       </div>
 
@@ -259,63 +270,63 @@ export default function GuestNutritionCheck(){
             <button
               type="button"
               className="confirm-modal-close"
-              aria-label="Close nutrition report"
+              aria-label={isHindi ? 'पोषण रिपोर्ट बंद करें' : 'Close nutrition report'}
               onClick={() => setShowReport(false)}
             >
               ×
             </button>
 
             <div className="confirm-modal-head">
-              <span className="confirm-modal-eyebrow">Nutrition Report</span>
-              <h3 id="guest-report-title">Your daily composition report</h3>
+              <span className="confirm-modal-eyebrow">{isHindi ? 'पोषण रिपोर्ट' : 'Nutrition Report'}</span>
+              <h3 id="guest-report-title">{isHindi ? 'आपकी दैनिक संरचना रिपोर्ट' : 'Your daily composition report'}</h3>
               <p className="muted">
-                Here is the full-day nutrition breakdown from the foods you added, including totals and meal-by-meal composition.
+                {isHindi ? 'जोड़े गए खाद्य पदार्थों के आधार पर पूरे दिन का पोषण विवरण यहाँ देखें।' : 'Here is the full-day nutrition breakdown from the foods you added, including totals and meal-by-meal composition.'}
               </p>
             </div>
 
             <div className="confirm-modal-body guest-report-body">
               <div className="guest-summary-grid">
                 <div className="guest-summary-card">
-                  <span>Calories</span>
+                  <span>{isHindi ? 'कैलोरी' : 'Calories'}</span>
                   <strong>{totals.calories}</strong>
                   <small>kcal</small>
                 </div>
                 <div className="guest-summary-card">
-                  <span>Protein</span>
+                  <span>{isHindi ? 'प्रोटीन' : 'Protein'}</span>
                   <strong>{totals.protein}</strong>
                   <small>g</small>
                 </div>
                 <div className="guest-summary-card">
-                  <span>Carbs</span>
+                  <span>{isHindi ? 'कार्ब्स' : 'Carbs'}</span>
                   <strong>{totals.carbs}</strong>
                   <small>g</small>
                 </div>
                 <div className="guest-summary-card">
-                  <span>Fats</span>
+                  <span>{isHindi ? 'फैट्स' : 'Fats'}</span>
                   <strong>{totals.fats}</strong>
                   <small>g</small>
                 </div>
                 <div className="guest-summary-card">
-                  <span>Fiber</span>
+                  <span>{isHindi ? 'फाइबर' : 'Fiber'}</span>
                   <strong>{totals.fiber}</strong>
                   <small>g</small>
                 </div>
                 <div className="guest-summary-card">
-                  <span>Calcium</span>
+                  <span>{isHindi ? 'कैल्शियम' : 'Calcium'}</span>
                   <strong>{totals.calcium}</strong>
                   <small>mg</small>
                 </div>
               </div>
 
               <div className="guest-vitamin-list">
-                <strong>Vitamin highlights</strong>
+                <strong>{isHindi ? 'विटामिन हाइलाइट्स' : 'Vitamin highlights'}</strong>
                 {vitaminSummary.length > 0 ? vitaminSummary.slice(0, 8).map((vitamin) => (
                   <div key={vitamin.name} className="guest-vitamin-row">
                     <span>{vitamin.name}</span>
-                    <span>{vitamin.count} serving signal</span>
+                    <span>{vitamin.count} {isHindi ? 'सर्विंग संकेत' : 'serving signal'}</span>
                   </div>
                 )) : (
-                  <p className="muted">No vitamin data was detected for the foods in this day.</p>
+                  <p className="muted">{isHindi ? 'इस दिन के खाद्य पदार्थों में विटामिन डेटा उपलब्ध नहीं है।' : 'No vitamin data was detected for the foods in this day.'}</p>
                 )}
               </div>
 
@@ -323,8 +334,8 @@ export default function GuestNutritionCheck(){
                 {groupedEntries.map((group) => (
                   <div key={group.type} className="guest-meal-card">
                     <div className="guest-meal-head">
-                      <strong>{formatMeal(group.type)}</strong>
-                      <span>{group.items.length} item{group.items.length === 1 ? '' : 's'}</span>
+                      <strong>{mealLabel(group.type)}</strong>
+                      <span>{group.items.length} {isHindi ? 'आइटम' : `item${group.items.length === 1 ? '' : 's'}`}</span>
                     </div>
                     <div className="guest-meal-items">
                       {group.items.map((item) => (
@@ -332,13 +343,13 @@ export default function GuestNutritionCheck(){
                           <div>
                             <strong>{item.name}</strong>
                             <span>
-                              Qty {item.quantity} • {Math.round(item.caloriesPerUnit * item.quantity)} kcal • {Number((item.proteinPerUnit * item.quantity).toFixed(1))} g protein
+                              {isHindi ? 'मात्रा' : 'Qty'} {item.quantity} • {Math.round(item.caloriesPerUnit * item.quantity)} kcal • {Number((item.proteinPerUnit * item.quantity).toFixed(1))} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'}
                             </span>
                           </div>
                           <div className="guest-entry-metrics">
-                            <span>{Number((item.carbsPerUnit * item.quantity).toFixed(1))} g carbs</span>
-                            <span>{Number((item.fatsPerUnit * item.quantity).toFixed(1))} g fats</span>
-                            <span>{Number((item.fiberPerUnit * item.quantity).toFixed(1))} g fiber</span>
+                            <span>{Number((item.carbsPerUnit * item.quantity).toFixed(1))} {isHindi ? 'ग्राम कार्ब्स' : 'g carbs'}</span>
+                            <span>{Number((item.fatsPerUnit * item.quantity).toFixed(1))} {isHindi ? 'ग्राम फैट्स' : 'g fats'}</span>
+                            <span>{Number((item.fiberPerUnit * item.quantity).toFixed(1))} {isHindi ? 'ग्राम फाइबर' : 'g fiber'}</span>
                           </div>
                         </div>
                       ))}

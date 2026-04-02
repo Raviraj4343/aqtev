@@ -42,7 +42,7 @@
   --focus-ring: rgba(6,104,96,0.18);
 
   /* Typography */
-  --font-sans: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-sans: "Plus Jakarta Sans", "Nirmala UI", "Noto Sans Devanagari", "Mangal", "Segoe UI", system-ui, -apple-system, sans-serif;
   --fs-xxl: 34px;
   --fs-xl: 22px;
   --fs-lg: 18px;

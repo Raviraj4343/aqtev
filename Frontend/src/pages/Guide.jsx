@@ -2,21 +2,22 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Card from '../components/ui/Card'
 import { useAuth } from '../contexts/AuthContext'
 import * as api from '../utils/api'
+import { useLanguage } from '../contexts/LanguageContext'
 
 const prettify = (value = '') =>
   String(value)
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase())
 
-const getBmiMeta = (weightKg, heightCm) => {
-  if (!weightKg || !heightCm) return { value: null, category: 'Incomplete profile' }
+const getBmiMeta = (weightKg, heightCm, isHindi) => {
+  if (!weightKg || !heightCm) return { value: null, category: isHindi ? 'अपूर्ण प्रोफ़ाइल' : 'Incomplete profile' }
   const bmi = weightKg / Math.pow(heightCm / 100, 2)
   const rounded = Number(bmi.toFixed(1))
 
-  if (rounded < 18.5) return { value: rounded, category: 'Underweight' }
-  if (rounded < 25) return { value: rounded, category: 'Healthy range' }
-  if (rounded < 30) return { value: rounded, category: 'Overweight' }
-  return { value: rounded, category: 'Obesity range' }
+  if (rounded < 18.5) return { value: rounded, category: isHindi ? 'कम वज़न' : 'Underweight' }
+  if (rounded < 25) return { value: rounded, category: isHindi ? 'स्वस्थ श्रेणी' : 'Healthy range' }
+  if (rounded < 30) return { value: rounded, category: isHindi ? 'अधिक वज़न' : 'Overweight' }
+  return { value: rounded, category: isHindi ? 'मोटापा श्रेणी' : 'Obesity range' }
 }
 
 const getCalorieTarget = ({ age, gender, weightKg, heightCm, activityLevel, goal }) => {
@@ -191,6 +192,8 @@ const getNutrientKey = (label = '') => {
 
 export default function Guide() {
   const { user } = useAuth() || {}
+  const { language } = useLanguage()
+  const isHindi = language === 'hi'
   const [todayLog, setTodayLog] = useState(null)
   const [realtimePlan, setRealtimePlan] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -283,7 +286,7 @@ export default function Guide() {
         }))
       } catch {
         if (cancelled) return
-        setFoodGuideError('Unable to load food suggestions right now.')
+        setFoodGuideError(isHindi ? 'अभी फूड सुझाव लोड नहीं हो सके।' : 'Unable to load food suggestions right now.')
       } finally {
         if (!cancelled) setFoodGuideLoading(false)
       }
@@ -291,7 +294,7 @@ export default function Guide() {
 
     loadBoostFoods()
     return () => { cancelled = true }
-  }, [activeFoodGuide?.nutrientKey, boostFoodsByNutrient, user?.dietPreference])
+  }, [activeFoodGuide?.nutrientKey, boostFoodsByNutrient, isHindi, user?.dietPreference])
 
   const report = useMemo(() => {
     const profile = {
@@ -304,7 +307,7 @@ export default function Guide() {
       dietPreference: user?.dietPreference
     }
 
-    const bmi = getBmiMeta(profile.weightKg, profile.heightCm)
+    const bmi = getBmiMeta(profile.weightKg, profile.heightCm, isHindi)
     const calorieTarget = getCalorieTarget(profile)
     const proteinTarget = getProteinTarget(profile.weightKg, profile.goal)
     const hydrationTarget = getHydrationTarget(profile.weightKg, profile.activityLevel)
@@ -433,12 +436,12 @@ export default function Guide() {
       actualProtein,
       sleepHours,
       steps,
-      waterLabel: todayLog?.waterIntake || 'Not logged',
+      waterLabel: todayLog?.waterIntake || (isHindi ? 'लॉग नहीं हुआ' : 'Not logged'),
       nutrientGaps,
       recommendations,
       score: clamp(baseScore, 0, 100)
     }
-  }, [resolvedGoal, todayLog, user])
+  }, [isHindi, resolvedGoal, todayLog, user])
 
   const summaryCards = [
     {
@@ -449,31 +452,31 @@ export default function Guide() {
     {
       label: 'Calorie need',
       value: report.calorieTarget ?? '-',
-      note: 'Estimated daily target'
+      note: isHindi ? 'अनुमानित दैनिक लक्ष्य' : 'Estimated daily target'
     },
     {
-      label: 'Protein target',
+      label: isHindi ? 'प्रोटीन लक्ष्य' : 'Protein target',
       value: report.proteinTarget ?? '-',
-      note: 'Daily recovery goal'
+      note: isHindi ? 'दैनिक रिकवरी लक्ष्य' : 'Daily recovery goal'
     },
     {
-      label: 'Guide score',
+      label: isHindi ? 'गाइड स्कोर' : 'Guide score',
       value: report.score,
-      note: 'Readiness snapshot'
+      note: isHindi ? 'तैयारी का स्नैपशॉट' : 'Readiness snapshot'
     }
   ]
 
   const focusLine = [
-    user?.activityLevel ? prettify(user.activityLevel) : 'Activity missing',
-    user?.dietPreference ? prettify(user.dietPreference) : 'Diet missing',
-    user?.weightKg ? `${user.weightKg} kg` : 'Weight missing'
+    user?.activityLevel ? prettify(user.activityLevel) : (isHindi ? 'गतिविधि अनुपलब्ध' : 'Activity missing'),
+    user?.dietPreference ? prettify(user.dietPreference) : (isHindi ? 'डाइट अनुपलब्ध' : 'Diet missing'),
+    user?.weightKg ? `${user.weightKg} kg` : (isHindi ? 'वज़न अनुपलब्ध' : 'Weight missing')
   ].join(' • ')
 
   const radarItems = report.nutrientGaps.map((gap, index) => ({
     ...gap,
     index,
     aligned: Math.max(8, 100 - gap.severity),
-    shortLabel: gap.label === 'Fiber and micros' ? 'Fiber' : gap.label
+    shortLabel: gap.label === 'Fiber and micros' ? (isHindi ? 'फाइबर' : 'Fiber') : gap.label
   }))
 
   const radarCenter = 140
@@ -501,11 +504,11 @@ export default function Guide() {
     ? aiActionPlan.map((text, index) => {
       if (text && typeof text === 'object') {
         return {
-          title: text.title || `Action ${index + 1}`,
+          title: text.title || (isHindi ? `एक्शन ${index + 1}` : `Action ${index + 1}`),
           body: text.body || ''
         }
       }
-      return { title: `Action ${index + 1}`, body: String(text || '') }
+      return { title: isHindi ? `एक्शन ${index + 1}` : `Action ${index + 1}`, body: String(text || '') }
     })
     : report.recommendations.map((item) => ({ title: item.title, body: item.body }))
 
@@ -527,15 +530,15 @@ export default function Guide() {
     <div className="page feature-page guide-page">
       <section className="guide-hero card">
         <div className="guide-hero-copy">
-          <span className="feature-eyebrow">Guide</span>
-          <h1>Your personalized health guide</h1>
+          <span className="feature-eyebrow">{isHindi ? 'गाइड' : 'Guide'}</span>
+          <h1>{isHindi ? 'आपका व्यक्तिगत स्वास्थ्य गाइड' : 'Your personalized health guide'}</h1>
           <p className="muted">
-            Analyze profile signals, today&apos;s diet, activity, and medical context in one elegant view with practical next steps.
+            {isHindi ? 'प्रोफ़ाइल संकेत, आज की डाइट, गतिविधि और स्वास्थ्य संदर्भ का व्यावहारिक विश्लेषण।' : 'Analyze profile signals, today\'s diet, activity, and medical context in one elegant view with practical next steps.'}
           </p>
 
           <div className="guide-hero-badges">
-            <span className="dashboard-badge">{user?.goal ? prettify(resolvedGoal) : 'Set your goal in profile'}</span>
-            <span className="dashboard-badge">{loading ? 'Loading today’s log' : 'Built from your real app data'}</span>
+            <span className="dashboard-badge">{user?.goal ? prettify(resolvedGoal) : (isHindi ? 'प्रोफ़ाइल में लक्ष्य सेट करें' : 'Set your goal in profile')}</span>
+            <span className="dashboard-badge">{loading ? (isHindi ? 'आज का लॉग लोड हो रहा है' : 'Loading today’s log') : (isHindi ? 'आपके वास्तविक डेटा से तैयार' : 'Built from your real app data')}</span>
           </div>
           <div className="guide-hero-meta">{focusLine}</div>
         </div>
@@ -543,14 +546,14 @@ export default function Guide() {
         <div className="guide-hero-visual">
           <div className="guide-score-orbit" aria-hidden="true">
             <div className="guide-score-core">
-              <span>Guide score</span>
+              <span>{isHindi ? 'गाइड स्कोर' : 'Guide score'}</span>
               <strong>{report.score}</strong>
-              <small>out of 100</small>
+              <small>{isHindi ? '100 में से' : 'out of 100'}</small>
             </div>
           </div>
           <div className="guide-score-caption">
             <strong>{report.bmi.category}</strong>
-            <span>BMI, calorie needs, intake quality, and recovery signals rolled into one quick snapshot.</span>
+            <span>{isHindi ? 'BMI, कैलोरी आवश्यकता और रिकवरी संकेतों का त्वरित स्नैपशॉट।' : 'BMI, calorie needs, intake quality, and recovery signals rolled into one quick snapshot.'}</span>
           </div>
         </div>
       </section>
@@ -570,7 +573,7 @@ export default function Guide() {
           <div className="feature-panel-head">
             <div>
               <h3>Today&apos;s priorities</h3>
-              <p className="muted">A quick spider view of how aligned your key nutrition priorities are today.</p>
+              <p className="muted">{isHindi ? 'आज आपकी पोषण प्राथमिकताएँ कितनी संतुलित हैं, इसका त्वरित स्पाइडर दृश्य।' : 'A quick spider view of how aligned your key nutrition priorities are today.'}</p>
             </div>
           </div>
 
@@ -586,7 +589,7 @@ export default function Guide() {
                 viewBox="0 0 280 280"
                 className="guide-radar-chart"
                 role="img"
-                aria-label="Spider chart showing alignment across your key nutrition priorities"
+                aria-label={isHindi ? 'मुख्य पोषण प्राथमिकताओं का संरेखण दिखाने वाला स्पाइडर चार्ट' : 'Spider chart showing alignment across your key nutrition priorities'}
               >
                 {radarLevels.map((level) => {
                   const ringPoints = radarItems.map((_, index) => {
@@ -633,7 +636,7 @@ export default function Guide() {
                     onFocus={() => setActiveRadarIndex(point.index)}
                     tabIndex="0"
                     role="button"
-                    aria-label={`${point.label}: ${point.current} out of ${point.target}, ${point.aligned}% aligned`}
+                    aria-label={isHindi ? `${point.label}: ${point.current} में से ${point.target}, ${point.aligned}% संरेखित` : `${point.label}: ${point.current} out of ${point.target}, ${point.aligned}% aligned`}
                   />
                 ))}
 
@@ -658,7 +661,7 @@ export default function Guide() {
                   key={item.label}
                   className={`guide-radar-legend-item ${activeRadarIndex === item.index ? 'active' : ''} ${getNutrientKey(item.label) ? 'actionable' : ''}`}
                   role={getNutrientKey(item.label) ? 'button' : undefined}
-                  aria-label={getNutrientKey(item.label) ? `View food ideas to boost ${item.label}` : undefined}
+                  aria-label={getNutrientKey(item.label) ? (isHindi ? `${item.label} बढ़ाने के लिए फूड सुझाव देखें` : `View food ideas to boost ${item.label}`) : undefined}
                   onMouseEnter={() => setActiveRadarIndex(item.index)}
                   onFocus={() => setActiveRadarIndex(item.index)}
                   onClick={() => openFoodGuide(item)}
@@ -678,7 +681,7 @@ export default function Guide() {
                       <div className="guide-gap-severity">{item.aligned}%</div>
                     </div>
                   </div>
-                  {getNutrientKey(item.label) ? <small>Tap to view food boosters</small> : null}
+                  {getNutrientKey(item.label) ? <small>{isHindi ? 'फूड बूस्टर देखने के लिए टैप करें' : 'Tap to view food boosters'}</small> : null}
                   <div className="guide-radar-legend-track" aria-hidden="true">
                     <span style={{ width: `${item.aligned}%` }} />
                   </div>
@@ -693,7 +696,7 @@ export default function Guide() {
           <div className="feature-panel-head">
             <div>
               <h3>Action plan</h3>
-              <p className="muted">Short, practical next steps for your current goal.</p>
+              <p className="muted">{isHindi ? 'आपके वर्तमान लक्ष्य के लिए छोटे और व्यावहारिक अगले कदम।' : 'Short, practical next steps for your current goal.'}</p>
             </div>
           </div>
 
@@ -710,7 +713,7 @@ export default function Guide() {
             <div className="guide-recommendations guide-recommendations-stack" style={{ marginTop: 14 }}>
               {aiRiskFlags.map((item, idx) => (
                 <div key={`risk-${idx}`} className="guide-recommendation-card">
-                  <span>Risk flag</span>
+                  <span>{isHindi ? 'जोखिम संकेत' : 'Risk flag'}</span>
                   <strong>{item}</strong>
                 </div>
               ))}
@@ -721,19 +724,19 @@ export default function Guide() {
             <div className="guide-kpi-stack" style={{ marginTop: 14 }}>
               {aiNutritionFocus.length ? (
                 <div className="guide-kpi-card">
-                  <span>Nutrition focus</span>
+                  <span>{isHindi ? 'पोषण फोकस' : 'Nutrition focus'}</span>
                   <strong>{aiNutritionFocus[0]}</strong>
                 </div>
               ) : null}
               {aiTrainingFocus.length ? (
                 <div className="guide-kpi-card">
-                  <span>Training focus</span>
+                  <span>{isHindi ? 'ट्रेनिंग फोकस' : 'Training focus'}</span>
                   <strong>{aiTrainingFocus[0]}</strong>
                 </div>
               ) : null}
               {aiRecoveryFocus.length ? (
                 <div className="guide-kpi-card">
-                  <span>Recovery focus</span>
+                  <span>{isHindi ? 'रिकवरी फोकस' : 'Recovery focus'}</span>
                   <strong>{aiRecoveryFocus[0]}</strong>
                 </div>
               ) : null}
@@ -754,27 +757,27 @@ export default function Guide() {
             <button
               type="button"
               className="dashboard-modal-close"
-              aria-label="Close food suggestions"
+              aria-label={isHindi ? 'फूड सुझाव बंद करें' : 'Close food suggestions'}
               onClick={() => setActiveFoodGuide(null)}
             >
               ×
             </button>
 
             <div className="dashboard-modal-head">
-              <span className="dashboard-eyebrow">Nutrition Boost</span>
-              <h3 id="guide-food-modal-title">Foods to boost {activeFoodGuide.label}</h3>
+              <span className="dashboard-eyebrow">{isHindi ? 'न्यूट्रिशन बूस्ट' : 'Nutrition Boost'}</span>
+              <h3 id="guide-food-modal-title">{isHindi ? `${activeFoodGuide.label} बढ़ाने वाले खाद्य पदार्थ` : `Foods to boost ${activeFoodGuide.label}`}</h3>
               <p className="muted">
-                Suggestions come from your app food library and are ranked for this nutrient.
+                {isHindi ? 'सुझाव आपकी फूड लाइब्रेरी से आते हैं और इस पोषक तत्व के लिए रैंक किए गए हैं।' : 'Suggestions come from your app food library and are ranked for this nutrient.'}
               </p>
             </div>
 
             <div className="dashboard-modal-body">
               <div className="dashboard-modal-highlight">
-                <span>Diet preference</span>
+                <span>{isHindi ? 'डाइट पसंद' : 'Diet preference'}</span>
                 <strong>{prettify(user?.dietPreference || 'mixed')}</strong>
               </div>
 
-              {foodGuideLoading ? <p className="muted">Loading food suggestions...</p> : null}
+              {foodGuideLoading ? <p className="muted">{isHindi ? 'फूड सुझाव लोड हो रहे हैं...' : 'Loading food suggestions...'}</p> : null}
               {foodGuideError ? <p className="muted">{foodGuideError}</p> : null}
 
               {!foodGuideLoading && !foodGuideError ? (
@@ -783,14 +786,14 @@ export default function Guide() {
                     <div className="guide-food-item" key={`${activeFoodGuide.nutrientKey}-${food.name}`}>
                       <div>
                         <strong>{food.name}</strong>
-                        <span>{food.nameHindi || 'Popular in your food library'}</span>
+                        <span>{food.nameHindi || (isHindi ? 'आपकी फूड लाइब्रेरी में लोकप्रिय' : 'Popular in your food library')}</span>
                       </div>
                       <div className="guide-food-metric">
                         <em>{food.highlight || '-'}</em>
-                        <small>{food.category} · {food.dietType === 'non_veg' ? 'non-veg' : 'veg'}</small>
+                        <small>{food.category} · {food.dietType === 'non_veg' ? (isHindi ? 'मांसाहारी' : 'non-veg') : (isHindi ? 'शाकाहारी' : 'veg')}</small>
                       </div>
                     </div>
-                  )) : <p className="muted">No strong matches found yet for this nutrient.</p>}
+                  )) : <p className="muted">{isHindi ? 'इस पोषक तत्व के लिए अभी उपयुक्त सुझाव नहीं मिले।' : 'No strong matches found yet for this nutrient.'}</p>}
                 </div>
               ) : null}
             </div>
