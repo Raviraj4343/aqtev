@@ -11,9 +11,6 @@ It provides real-time tracking, intelligent suggestions, and a clean user experi
 * 🔗 Frontend: https://aqtev.vercel.com
 * 🔗 Backend: https://aqtev.onrender.com
 
-> ⚡ Demo Login
-> Email: `demo@aqtev.com`
-> Password: `123456`
 
 ---
 
