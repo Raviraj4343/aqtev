@@ -48,7 +48,7 @@ export default function DailyLogEditor({
 
   const handleAddFood = () => {
     if (!pendingFood) return
-    const quantity = Math.max(1, Number(pendingQuantity) || 1)
+    const quantity = Math.max(0.1, Number(pendingQuantity) || 1)
     if (onAddFood) onAddFood(pendingFood, mealType, quantity)
     setStatus(isHindi ? `${pendingFood.name} को ${mealType} में जोड़ा गया।` : `${pendingFood.name} added to ${mealType}.`)
     setPendingFood(null)
@@ -129,14 +129,15 @@ export default function DailyLogEditor({
             <div className="meal-add-copy">
               <strong>{pendingFood.name}</strong>
               <span>
-                {pendingFood.caloriesPerUnit} kcal • {pendingFood.proteinPerUnit || 0} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'} • {isHindi ? 'प्रति' : 'per'} {pendingFood.unit}
+                {pendingFood.caloriesPerUnit} kcal • {pendingFood.proteinPerUnit || 0} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'} • {isHindi ? 'प्रति 100mg' : 'per 100mg'}
               </span>
             </div>
             <div className="meal-add-controls">
               <input
                 className="meal-qty-input"
                 type="number"
-                min="1"
+                min="0.1"
+                step="0.1"
                 value={pendingQuantity}
                 onChange={(e) => setPendingQuantity(e.target.value)}
                 aria-label={isHindi ? `${pendingFood.name} की मात्रा` : `Quantity for ${pendingFood.name}`}

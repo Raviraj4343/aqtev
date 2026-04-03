@@ -41,7 +41,7 @@ export default function GuestNutritionCheck(){
   const handleAddFood = () => {
     if (!pendingFood) return
 
-    const quantity = Math.max(1, Number(pendingQuantity) || 1)
+    const quantity = Math.max(0.1, Number(pendingQuantity) || 1)
 
     setEntries((prev) => [
       ...prev,
@@ -170,13 +170,14 @@ export default function GuestNutritionCheck(){
               <div>
                 <strong>{pendingFood.name}</strong>
                 <span>
-                  {pendingFood.caloriesPerUnit} kcal • {pendingFood.proteinPerUnit || 0} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'} • {isHindi ? 'प्रति' : 'per'} {pendingFood.unit}
+                  {pendingFood.caloriesPerUnit} kcal • {pendingFood.proteinPerUnit || 0} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'} • {isHindi ? 'प्रति 100mg' : 'per 100mg'}
                 </span>
               </div>
               <div className="guest-pending-actions">
                 <input
                   type="number"
-                  min="1"
+                  min="0.1"
+                  step="0.1"
                   value={pendingQuantity}
                   onChange={(e) => setPendingQuantity(e.target.value)}
                   className="meal-qty-input"

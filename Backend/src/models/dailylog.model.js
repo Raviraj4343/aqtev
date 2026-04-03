@@ -9,7 +9,7 @@ const mealItemSchema = new mongoose.Schema(
       required: true,
     },
     foodName: { type: String, required: true },
-    quantity: { type: Number, required: true, min: 0.5 },
+    quantity: { type: Number, required: true, min: 0.1 },
     caloriesPerUnit: { type: Number, required: true },
     proteinPerUnit: { type: Number, required: true },
     carbsPerUnit: { type: Number, default: 0 },

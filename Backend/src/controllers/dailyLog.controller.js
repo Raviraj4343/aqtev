@@ -92,7 +92,8 @@ const enrichMeals = async (meals) => {
     const enrichedItems = [];
 
     for (const item of mealGroup.items || []) {
-      if (!item.quantity || item.quantity <= 0) {
+      const quantity = Number(item?.quantity);
+      if (!Number.isFinite(quantity) || quantity <= 0) {
         throw new ApiError(400, "Quantity must be a positive number.");
       }
 
@@ -104,19 +105,19 @@ const enrichMeals = async (meals) => {
       enrichedItems.push({
         foodId: food._id,
         foodName: food.name,
-        quantity: item.quantity,
+        quantity,
         caloriesPerUnit: food.caloriesPerUnit,
         proteinPerUnit: food.proteinPerUnit,
         carbsPerUnit: food.carbsPerUnit || 0,
         fatsPerUnit: food.fatsPerUnit || 0,
         fiberPerUnit: food.fiberPerUnit || 0,
         calciumPerUnit: food.calciumPerUnit || 0,
-        totalCalories: parseFloat((food.caloriesPerUnit * item.quantity).toFixed(1)),
-        totalProtein: parseFloat((food.proteinPerUnit * item.quantity).toFixed(1)),
-        totalCarbs: parseFloat(((food.carbsPerUnit || 0) * item.quantity).toFixed(1)),
-        totalFats: parseFloat(((food.fatsPerUnit || 0) * item.quantity).toFixed(1)),
-        totalFiber: parseFloat(((food.fiberPerUnit || 0) * item.quantity).toFixed(1)),
-        totalCalcium: parseFloat(((food.calciumPerUnit || 0) * item.quantity).toFixed(1)),
+        totalCalories: parseFloat((food.caloriesPerUnit * quantity).toFixed(1)),
+        totalProtein: parseFloat((food.proteinPerUnit * quantity).toFixed(1)),
+        totalCarbs: parseFloat(((food.carbsPerUnit || 0) * quantity).toFixed(1)),
+        totalFats: parseFloat(((food.fatsPerUnit || 0) * quantity).toFixed(1)),
+        totalFiber: parseFloat(((food.fiberPerUnit || 0) * quantity).toFixed(1)),
+        totalCalcium: parseFloat(((food.calciumPerUnit || 0) * quantity).toFixed(1)),
       });
     }
 
@@ -176,7 +177,8 @@ const updateMealSection = asyncHandler(async (req, res) => {
 
   const enrichedItems = [];
   for (const item of items || []) {
-    if (!item.quantity || item.quantity <= 0) {
+    const quantity = Number(item?.quantity);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
       throw new ApiError(400, "Quantity must be a positive number.");
     }
     const food = await resolveFoodForMealItem(item);
@@ -185,19 +187,19 @@ const updateMealSection = asyncHandler(async (req, res) => {
     enrichedItems.push({
       foodId: food._id,
       foodName: food.name,
-      quantity: item.quantity,
+      quantity,
       caloriesPerUnit: food.caloriesPerUnit,
       proteinPerUnit: food.proteinPerUnit,
       carbsPerUnit: food.carbsPerUnit || 0,
       fatsPerUnit: food.fatsPerUnit || 0,
       fiberPerUnit: food.fiberPerUnit || 0,
       calciumPerUnit: food.calciumPerUnit || 0,
-      totalCalories: parseFloat((food.caloriesPerUnit * item.quantity).toFixed(1)),
-      totalProtein: parseFloat((food.proteinPerUnit * item.quantity).toFixed(1)),
-      totalCarbs: parseFloat(((food.carbsPerUnit || 0) * item.quantity).toFixed(1)),
-      totalFats: parseFloat(((food.fatsPerUnit || 0) * item.quantity).toFixed(1)),
-      totalFiber: parseFloat(((food.fiberPerUnit || 0) * item.quantity).toFixed(1)),
-      totalCalcium: parseFloat(((food.calciumPerUnit || 0) * item.quantity).toFixed(1)),
+      totalCalories: parseFloat((food.caloriesPerUnit * quantity).toFixed(1)),
+      totalProtein: parseFloat((food.proteinPerUnit * quantity).toFixed(1)),
+      totalCarbs: parseFloat(((food.carbsPerUnit || 0) * quantity).toFixed(1)),
+      totalFats: parseFloat(((food.fatsPerUnit || 0) * quantity).toFixed(1)),
+      totalFiber: parseFloat(((food.fiberPerUnit || 0) * quantity).toFixed(1)),
+      totalCalcium: parseFloat(((food.calciumPerUnit || 0) * quantity).toFixed(1)),
     });
   }
 
