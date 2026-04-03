@@ -67,6 +67,7 @@ export default function DailyLogEditor({
         type: meal.type,
         items: meal.items.map((item) => ({
           foodId: item.foodId,
+          foodName: item.foodName,
           quantity: Number(item.quantity) || 1,
         })),
       })),

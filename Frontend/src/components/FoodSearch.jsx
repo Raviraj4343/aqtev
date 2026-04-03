@@ -3,13 +3,17 @@ import Input from './ui/Input'
 import * as api from '../utils/api'
 import { useLanguage } from '../contexts/LanguageContext'
 
-export default function FoodSearch({ onSelect, placeholder = 'Search foods...', foods = [] }){
+const EMPTY_FOODS = []
+
+export default function FoodSearch({ onSelect, placeholder = 'Search foods...', foods = EMPTY_FOODS }){
   const { language } = useLanguage()
   const isHindi = language === 'hi'
   const [q, setQ] = useState('')
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const trimmedQuery = q.trim()
+  const hasQuery = trimmedQuery.length > 0
 
   const indexedFoods = useMemo(() => {
     if (!Array.isArray(foods)) return []
@@ -20,9 +24,10 @@ export default function FoodSearch({ onSelect, placeholder = 'Search foods...', 
   }, [foods])
 
   useEffect(() => {
-    if (!q || q.trim().length < 1) {
+    if (!hasQuery) {
       setResults([])
       setError('')
+      setLoading(false)
       return
     }
 
@@ -31,7 +36,7 @@ export default function FoodSearch({ onSelect, placeholder = 'Search foods...', 
       setLoading(true)
       setError('')
 
-      const term = q.trim().toLowerCase()
+      const term = trimmedQuery.toLowerCase()
       const localMatches = indexedFoods
         .filter((entry) => entry.term.includes(term))
         .map((entry) => entry.item)
@@ -49,7 +54,7 @@ export default function FoodSearch({ onSelect, placeholder = 'Search foods...', 
           return
         }
 
-        const res = await api.searchFoods(q.trim())
+        const res = await api.searchFoods(trimmedQuery)
         if (!active) return
         const remote = Array.isArray(res?.data) ? res.data : []
 
@@ -81,7 +86,7 @@ export default function FoodSearch({ onSelect, placeholder = 'Search foods...', 
       active = false
       clearTimeout(t)
     }
-  }, [q, indexedFoods, isHindi])
+  }, [hasQuery, indexedFoods, isHindi, trimmedQuery])
 
   const handleSelect = (food) => {
     if (onSelect) onSelect(food)
@@ -100,11 +105,11 @@ export default function FoodSearch({ onSelect, placeholder = 'Search foods...', 
         placeholder={placeholder === 'Search foods...' ? (isHindi ? 'खाद्य पदार्थ खोजें...' : placeholder) : placeholder}
       />
 
-      {(loading || error || results.length > 0 || q.trim()) ? (
+      {(loading || error || results.length > 0 || hasQuery) ? (
         <div className="suggestions">
           {loading ? <div className="muted suggestion-state">{isHindi ? 'खोज जारी है...' : 'Searching...'}</div> : null}
           {!loading && error ? <div className="muted suggestion-state">{error}</div> : null}
-          {!loading && !error && q.trim() && results.length === 0 ? (
+          {!loading && !error && hasQuery && results.length === 0 ? (
             <div className="muted suggestion-state">{isHindi ? 'कोई खाद्य पदार्थ नहीं मिला।' : 'No foods found.'}</div>
           ) : null}
           {results.map(r => {
@@ -116,7 +121,7 @@ export default function FoodSearch({ onSelect, placeholder = 'Search foods...', 
             ].filter(Boolean).join(' • ')
 
             return (
-              <button key={r._id} type="button" className="suggestion" onClick={() => handleSelect(r)}>
+              <button key={r._id || `${r.name}-${r.unit || 'unit'}`} type="button" className="suggestion" onClick={() => handleSelect(r)}>
                 <div className="s-left">
                   <div className="s-name">{r.name}</div>
                   <div className="muted">{meta}</div>

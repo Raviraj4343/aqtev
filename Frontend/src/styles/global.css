@@ -398,11 +398,11 @@ a:hover{color:var(--color-accent);text-decoration:underline}
 .error-text{color:var(--color-danger);font-size:13px;margin-top:6px;grid-column:span 2}
 
 /* Food search suggestions */
-.food-search .suggestions{margin-top:8px;border-radius:8px;overflow:hidden;border:1px solid rgba(15,23,42,0.04);background:var(--color-surface)}
+.food-search .suggestions{margin-top:8px;border-radius:8px;min-height:56px;max-height:280px;overflow:auto;border:1px solid rgba(15,23,42,0.04);background:var(--color-surface)}
 .suggestion{width:100%;padding:10px 12px;border:0;border-bottom:1px solid rgba(15,23,42,0.02);cursor:pointer;background:transparent;text-align:left}
 .suggestion:hover{background:rgba(2,6,23,0.02)}
 .s-name{font-weight:600}
-.suggestion-state{padding:10px 12px}
+.suggestion-state{padding:10px 12px;min-height:56px;display:flex;align-items:center}
 
 /* Daily editor */
 .daily-editor .vitals{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
