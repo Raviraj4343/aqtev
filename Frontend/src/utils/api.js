@@ -78,6 +78,7 @@ const resolveApiBase = () => {
 
 const API_BASE = resolveApiBase()
 const REQUEST_TIMEOUT_MS = 65000
+const WARMUP_TIMEOUT_MS = 8000
 const MEMO_TTL_MS = 2 * 60 * 1000
 const NATIVE_RETRY_DELAYS_MS = [1800, 4000]
 const NATIVE_WARMUP_TTL_MS = 90 * 1000
@@ -143,6 +144,15 @@ const getHealthUrl = (apiBase) => {
   }
 }
 
+const runNativeWarmupRequest = async (apiBase) => {
+  await CapacitorHttp.request({
+    url: getHealthUrl(apiBase),
+    method: 'GET',
+    connectTimeout: WARMUP_TIMEOUT_MS,
+    readTimeout: WARMUP_TIMEOUT_MS,
+  })
+}
+
 const ensureNativeBackendWarm = async (apiBase) => {
   if (!isNativeRuntime()) return
   if (Date.now() - nativeWarmupAt < NATIVE_WARMUP_TTL_MS) return
@@ -150,12 +160,7 @@ const ensureNativeBackendWarm = async (apiBase) => {
 
   nativeWarmupPromise = (async () => {
     try {
-      await CapacitorHttp.request({
-        url: getHealthUrl(apiBase),
-        method: 'GET',
-        connectTimeout: REQUEST_TIMEOUT_MS,
-        readTimeout: REQUEST_TIMEOUT_MS,
-      })
+      await runNativeWarmupRequest(apiBase)
     } catch {
       // Ignore warmup errors; actual request still runs with retries.
     } finally {
@@ -165,6 +170,21 @@ const ensureNativeBackendWarm = async (apiBase) => {
   })()
 
   return nativeWarmupPromise
+}
+
+export function prewarmBackend(){
+  const apiBase = getApiBase()
+
+  if (isNativeRuntime()) {
+    return ensureNativeBackendWarm(apiBase)
+  }
+
+  const healthUrl = getHealthUrl(apiBase)
+  if (!healthUrl) return Promise.resolve()
+
+  return fetch(healthUrl, { method: 'GET' })
+    .then(() => undefined)
+    .catch(() => undefined)
 }
 
 function getApiBase(){

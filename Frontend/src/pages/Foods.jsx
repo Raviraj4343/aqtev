@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Card from '../components/ui/Card'
 import FoodSearch from '../components/FoodSearch'
 import * as api from '../utils/api'
@@ -18,21 +18,37 @@ export default function Foods(){
 
   useEffect(() => {
     let mounted = true
-    Promise.all([api.getFoodCategories(), api.getAllFoods()])
-      .then(([categoriesResponse, foodsResponse]) => {
+    api.getFoodCategories()
+      .then((categoriesResponse) => {
         if (!mounted) return
         setCategories(categoriesResponse?.data || [])
-        setFoods(foodsResponse?.data || [])
       })
       .catch(() => {})
-      .finally(() => { if (mounted) setLoading(false) })
     return () => { mounted = false }
   }, [])
 
-  const filteredFoods = useMemo(() => {
-    if (!activeCategory) return foods
-    return foods.filter((food) => food.category === activeCategory)
-  }, [foods, activeCategory])
+  useEffect(() => {
+    let mounted = true
+    setLoading(true)
+
+    const query = { limit: 80 }
+    if (activeCategory) query.category = activeCategory
+
+    api.getAllFoods(query)
+      .then((foodsResponse) => {
+        if (!mounted) return
+        setFoods(Array.isArray(foodsResponse?.data) ? foodsResponse.data : [])
+      })
+      .catch(() => {
+        if (!mounted) return
+        setFoods([])
+      })
+      .finally(() => {
+        if (mounted) setLoading(false)
+      })
+
+    return () => { mounted = false }
+  }, [activeCategory])
 
   const vitamins = Array.isArray(selected?.vitamins) ? selected.vitamins.join(', ') : ''
 
@@ -63,7 +79,7 @@ export default function Foods(){
               <p className="muted">{isHindi ? 'नाम से खोजकर कैलोरी, मैक्रो, कैल्शियम और विटामिन देखें।' : 'Search by food name to preview calories, macros, calcium, and vitamins.'}</p>
             </div>
           </div>
-          <FoodSearch foods={foods} onSelect={(food) => setSelected(food)} />
+          <FoodSearch onSelect={(food) => setSelected(food)} />
 
           {selected ? (
             <div className="food-detail-panel">
@@ -138,7 +154,7 @@ export default function Foods(){
           </div>
 
           <div className="feature-stack-list foods-browser">
-            {filteredFoods.slice(0, 8).map((food) => (
+            {foods.slice(0, 8).map((food) => (
               <button key={food._id} type="button" className="feature-browser-row" onClick={() => setSelected(food)}>
                 <div>
                   <strong>{food.name}</strong>

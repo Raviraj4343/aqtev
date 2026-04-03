@@ -343,6 +343,9 @@ a:hover{color:var(--color-accent);text-decoration:underline}
 .daily-editor .vitals{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .daily-editor .meals{margin-top:12px}
 .daily-editor .field select{width:100%;min-height:54px;padding:0 14px;border-radius:var(--radius);border:1px solid rgba(7,89,133,0.12);background:rgba(233,239,241,0.78);font-size:var(--fs-base);color:var(--color-text);box-shadow:inset 0 1px 0 rgba(233,239,241,0.72),0 8px 22px rgba(11,31,36,0.05)}
+.daily-editor .vitals .field{min-width:0}
+.daily-editor .vitals .field label{max-width:calc(100% - 20px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.daily-editor .vitals .field input[type="number"] + label{transform:translateY(-10px) scale(.95);top:6px;color:var(--color-primary-600);background:var(--color-surface)}
 .meal-group{padding:12px;border-radius:14px;border:1px solid rgba(15,23,42,0.06);margin-bottom:10px;background:rgba(233,239,241,0.52)}
 .meal-group-title{margin-bottom:10px;font-weight:700}
 .meal-item-row{display:grid;grid-template-columns:minmax(0,1fr) 84px auto;gap:10px;align-items:center;padding:8px 0}
@@ -872,6 +875,8 @@ a:hover{color:var(--color-accent);text-decoration:underline}
   .guest-entry-metrics{text-align:left}
   .guest-check-orbit{width:210px}
   .feature-list-row,.feature-browser-row{align-items:flex-start;flex-direction:column}
+  .daily-editor .vitals{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .daily-editor .vitals .field:first-child{grid-column:1 / -1}
   .meal-item-row{grid-template-columns:1fr}
   .meal-add-card,.meal-add-controls,.snapshot-item,.snapshot-meal-head{align-items:flex-start;flex-direction:column}
   .auth-page-shell{padding:20px 12px}
@@ -888,5 +893,10 @@ a:hover{color:var(--color-accent);text-decoration:underline}
   .guide-gap-top,
   .guide-radar-legend-top{flex-direction:column;align-items:flex-start}
   .guide-inline-actions .btn-ghost{width:100%}
+}
+
+@media (max-width:360px){
+  .daily-editor .vitals{grid-template-columns:1fr}
+  .daily-editor .vitals .field:first-child{grid-column:auto}
 }
 

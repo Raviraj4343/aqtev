@@ -120,8 +120,11 @@ const dedupeFoodsByName = (foods = []) => {
 
 const getAllFoods = asyncHandler(async (req, res) => {
   const { diet, category } = req.query;
-  const limit = Math.max(0, Math.min(2000, Number(req.query.limit) || 0));
-  const cacheKey = `all:${diet || "all"}:${category || "all"}:${limit || "all"}`;
+  const parsedLimit = Number(req.query.limit);
+  const limit = Number.isFinite(parsedLimit) && parsedLimit > 0
+    ? Math.min(2000, parsedLimit)
+    : 120;
+  const cacheKey = `all:${diet || "all"}:${category || "all"}:${limit}`;
   const cached = getCache(cacheKey);
 
   if (cached) {
@@ -148,11 +151,11 @@ const getAllFoods = asyncHandler(async (req, res) => {
 
   let dbQuery = Food.find(filter)
     .sort({ category: 1, name: 1 })
-    .lean();
-
-  if (limit > 0) {
-    dbQuery = dbQuery.limit(limit);
-  }
+    .limit(limit)
+    .lean()
+    .select(
+      "name nameHindi unit caloriesPerUnit proteinPerUnit carbsPerUnit fatsPerUnit fiberPerUnit calciumPerUnit vitamins category dietType"
+    );
 
   let foods = await dbQuery;
 

@@ -28,6 +28,11 @@ export default function SignIn(){
   }, [auth.user, navigate])
 
   useEffect(()=>{
+    // Warm backend in the background so login tap is faster on cold hosts/mobile.
+    api.prewarmBackend?.().catch(()=>{})
+  }, [])
+
+  useEffect(()=>{
     if (rememberedUser?.email) setRememberMe(true)
   }, [rememberedUser])
 
