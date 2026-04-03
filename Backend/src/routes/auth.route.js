@@ -76,7 +76,7 @@ router.post(
   validate,
   forgotPassword
 );
-
+ 
 router.post(
   "/reset-password",
   body("token").notEmpty().withMessage("Token is required"),
