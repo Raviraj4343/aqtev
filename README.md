@@ -1,9 +1,5 @@
 # 🏋️ FitCek – Smart Health Tracking Platform
-
-FitCek is a full-stack health tracking application that helps users monitor daily nutrition, weight, and lifestyle habits with AI-powered insights and personalized recommendations.
-
-It provides real-time tracking, intelligent suggestions, and a clean user experience designed for long-term health improvement.
-
+---
 ![Frontend](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react&logoColor=white)
 ![Build Tool](https://img.shields.io/badge/Build-Vite-646CFF?logo=vite&logoColor=white)
 ![Backend](https://img.shields.io/badge/Backend-Node.js-339933?logo=node.js&logoColor=white)
@@ -19,6 +15,12 @@ It provides real-time tracking, intelligent suggestions, and a clean user experi
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
 ![Deployment](https://img.shields.io/badge/Frontend-Vercel-000000?logo=vercel&logoColor=white)
 ![Backend Hosting](https://img.shields.io/badge/Backend-Render-46E3B7?logo=render&logoColor=white)
+
+---
+
+FitCek is a full-stack health tracking application that helps users monitor daily nutrition, weight, and lifestyle habits with AI-powered insights and personalized recommendations.
+
+It provides real-time tracking, intelligent suggestions, and a clean user experience designed for long-term health improvement.
 
 
 ---
