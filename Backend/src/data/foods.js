@@ -1,6 +1,6 @@
 const RAW_FOOD = [
   {"name":"Roti (Chapati)","nameHindi":"रोटी","caloriesPerUnit":120,"proteinPerUnit":3,"carbsPerUnit":22,"fatsPerUnit":1,"fiberPerUnit":3,"calciumPerUnit":10,"vitamins":["Vitamin B1"],"unit":"piece","category":"grain","dietType":"veg"},
-  {"name":"Rice(plain)","nameHindi":"चावल","caloriesPerUnit":130,"proteinPerUnit":2.5,"carbsPerUnit":28,"fatsPerUnit":0.3,"fiberPerUnit":0.4,"calciumPerUnit":5,"vitamins":["Vitamin B1"],"unit":"bowl","category":"grain","dietType":"veg"},
+  {"name":"Rice plain","nameHindi":"चावल","caloriesPerUnit":130,"proteinPerUnit":2.5,"carbsPerUnit":28,"fatsPerUnit":0.3,"fiberPerUnit":0.4,"calciumPerUnit":5,"vitamins":["Vitamin B1"],"unit":"bowl","category":"grain","dietType":"veg"},
   {"name":"Dal Tadka","nameHindi":"दाल तड़का","caloriesPerUnit":180,"proteinPerUnit":9,"carbsPerUnit":20,"fatsPerUnit":6,"fiberPerUnit":5,"calciumPerUnit":30,"vitamins":["Vitamin B9"],"unit":"bowl","category":"protein","dietType":"veg"},
   {"name":"Paneer Curry","nameHindi":"पनीर करी","caloriesPerUnit":260,"proteinPerUnit":12,"carbsPerUnit":8,"fatsPerUnit":20,"fiberPerUnit":1,"calciumPerUnit":200,"vitamins":["Vitamin B12"],"unit":"bowl","category":"protein","dietType":"veg"},
   {"name":"Chicken Curry","nameHindi":"चिकन करी","caloriesPerUnit":280,"proteinPerUnit":25,"carbsPerUnit":6,"fatsPerUnit":18,"fiberPerUnit":1,"calciumPerUnit":20,"vitamins":["Vitamin B6"],"unit":"bowl","category":"protein","dietType":"non_veg"},

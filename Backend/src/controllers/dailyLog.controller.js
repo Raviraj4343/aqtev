@@ -3,12 +3,80 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import DailyLog from "../models/dailylog.model.js";
 import Food from "../models/food.model.js";
+import FoodData from "../data/foods.js";
 import { MEAL_TYPES } from "../constants.js";
 
 
 const getTodayIST = () => {
   return new Date()
     .toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }); // "YYYY-MM-DD"
+};
+
+const normalizeTerm = (value = "") => String(value || "").trim().toLowerCase();
+const escapeRegex = (value = "") => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const tokenize = (value = "") =>
+  normalizeTerm(value)
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 8);
+
+const resolveFoodForMealItem = async (item = {}) => {
+  if (item.foodId) {
+    const byId = await Food.findById(item.foodId);
+    if (byId && byId.isActive) return byId;
+  }
+
+  const requestedName = String(item.foodName || "").trim();
+  if (!requestedName) return null;
+  const tokens = tokenize(requestedName);
+
+  const exactNameRegex = new RegExp(`^${escapeRegex(requestedName)}$`, "i");
+  const byName = await Food.findOne({ isActive: true, $or: [{ name: exactNameRegex }, { nameHindi: exactNameRegex }] });
+  if (byName) return byName;
+
+  if (tokens.length > 0) {
+    const tokenClauses = tokens.map((token) => {
+      const tokenRegex = new RegExp(escapeRegex(token), "i");
+      return { $or: [{ name: tokenRegex }, { nameHindi: tokenRegex }] };
+    });
+
+    const fuzzyByName = await Food.findOne({
+      isActive: true,
+      $and: tokenClauses,
+    }).sort({ updatedAt: -1 });
+
+    if (fuzzyByName) return fuzzyByName;
+  }
+
+  const requestedTerm = normalizeTerm(requestedName);
+  const staticFoods = Array.isArray(FoodData) ? FoodData : [];
+  const staticFood = staticFoods.find((food) => {
+    const english = normalizeTerm(food?.name);
+    const hindi = normalizeTerm(food?.nameHindi);
+    return english === requestedTerm || hindi === requestedTerm;
+  }) || staticFoods.find((food) => {
+    if (!tokens.length) return false;
+    const searchText = `${normalizeTerm(food?.name)} ${normalizeTerm(food?.nameHindi)}`;
+    return tokens.every((token) => searchText.includes(token));
+  });
+
+  if (!staticFood) return null;
+
+  const created = await Food.findOneAndUpdate(
+    { name: staticFood.name },
+    {
+      $setOnInsert: {
+        ...staticFood,
+        isActive: true,
+      },
+      $set: {
+        isActive: true,
+      },
+    },
+    { new: true, upsert: true }
+  );
+
+  return created;
 };
 
 const enrichMeals = async (meals) => {
@@ -24,14 +92,13 @@ const enrichMeals = async (meals) => {
     const enrichedItems = [];
 
     for (const item of mealGroup.items || []) {
-      if (!item.foodId) throw new ApiError(400, "Each meal item must have a foodId.");
       if (!item.quantity || item.quantity <= 0) {
         throw new ApiError(400, "Quantity must be a positive number.");
       }
 
-      const food = await Food.findById(item.foodId);
+      const food = await resolveFoodForMealItem(item);
       if (!food || !food.isActive) {
-        throw new ApiError(404, `Food item not found: ${item.foodId}`);
+        throw new ApiError(404, `Food item not found: ${item.foodId || item.foodName || "unknown"}`);
       }
 
       enrichedItems.push({
@@ -109,9 +176,11 @@ const updateMealSection = asyncHandler(async (req, res) => {
 
   const enrichedItems = [];
   for (const item of items || []) {
-    if (!item.foodId) throw new ApiError(400, "Each meal item must have a foodId.");
-    const food = await Food.findById(item.foodId);
-    if (!food || !food.isActive) throw new ApiError(404, `Food not found: ${item.foodId}`);
+    if (!item.quantity || item.quantity <= 0) {
+      throw new ApiError(400, "Quantity must be a positive number.");
+    }
+    const food = await resolveFoodForMealItem(item);
+    if (!food || !food.isActive) throw new ApiError(404, `Food not found: ${item.foodId || item.foodName || "unknown"}`);
 
     enrichedItems.push({
       foodId: food._id,

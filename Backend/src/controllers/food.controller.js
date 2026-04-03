@@ -6,6 +6,11 @@ import ApiError from "../utils/ApiError.js";
 
 const escapeRegex = (text = "") => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const normalizeTerm = (text = "") => String(text).toLowerCase().trim();
+const tokenizeTerm = (text = "") =>
+  normalizeTerm(text)
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 8);
 const CACHE_TTL_MS = 2 * 60 * 1000;
 const responseCache = new Map();
 
@@ -27,6 +32,38 @@ const getCache = (key) => {
 
 const setCache = (key, value) => {
   responseCache.set(key, { ts: Date.now(), value });
+};
+
+const scoreSearchMatch = (item = {}, normalizedTerm = "", tokens = []) => {
+  const searchText = `${normalizeTerm(item?.name)} ${normalizeTerm(item?.nameHindi)}`.trim();
+  if (!searchText) return 0;
+
+  const hasAllTokens = tokens.length > 0 && tokens.every((token) => searchText.includes(token));
+  if (!hasAllTokens) return 0;
+
+  let score = tokens.reduce((sum, token) => sum + (searchText.includes(token) ? 12 : 0), 0);
+
+  if (normalizedTerm && searchText.includes(normalizedTerm)) score += 40;
+  if (normalizedTerm && searchText.startsWith(normalizedTerm)) score += 25;
+  if (normalizedTerm && normalizeTerm(item?.name) === normalizedTerm) score += 50;
+
+  return score;
+};
+
+const rankAndTrimFoods = (foods = [], term = "", limit = 10) => {
+  const normalizedTerm = normalizeTerm(term);
+  const tokens = tokenizeTerm(normalizedTerm);
+  const maxItems = Math.max(1, Number(limit) || 10);
+
+  return [...foods]
+    .map((item) => ({ item, score: scoreSearchMatch(item, normalizedTerm, tokens) }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return String(a.item?.name || "").localeCompare(String(b.item?.name || ""));
+    })
+    .slice(0, maxItems)
+    .map((entry) => entry.item);
 };
 
 const boostRules = {
@@ -52,6 +89,7 @@ const boostRules = {
 
 const filterStaticFoods = ({ diet, category, q, limit }) => {
   const term = normalizeTerm(q);
+  const tokens = tokenizeTerm(term);
   let items = STATIC_FOODS;
 
   if (diet === "veg") {
@@ -64,7 +102,7 @@ const filterStaticFoods = ({ diet, category, q, limit }) => {
 
   if (term) {
     const matched = STATIC_SEARCH_INDEX
-      .filter((entry) => entry.searchText.includes(term))
+      .filter((entry) => tokens.every((token) => entry.searchText.includes(token)))
       .map((entry) => entry.item);
 
     const categoryFiltered = category
@@ -74,6 +112,12 @@ const filterStaticFoods = ({ diet, category, q, limit }) => {
     items = diet === "veg"
       ? categoryFiltered.filter((item) => item.dietType === "veg")
       : categoryFiltered;
+  }
+
+  if (term) {
+    const ranked = rankAndTrimFoods(items, term, Number(limit) || items.length);
+    if (limit && Number(limit) > 0) return ranked.slice(0, Number(limit));
+    return ranked;
   }
 
   if (limit && Number(limit) > 0) {
@@ -182,6 +226,8 @@ const searchFoods = asyncHandler(async (req, res) => {
 
   const limit = Math.max(1, Math.min(20, Number(req.query.limit) || 10));
   const safeTerm = term.slice(0, 64);
+  const normalizedTerm = normalizeTerm(safeTerm);
+  const tokens = tokenizeTerm(normalizedTerm);
 
   const cacheKey = `search:${safeTerm.toLowerCase()}:${limit}`;
   const cached = getCache(cacheKey);
@@ -194,22 +240,31 @@ const searchFoods = asyncHandler(async (req, res) => {
   }
 
   const safeRegex = new RegExp(escapeRegex(safeTerm), "i");
+  const tokenClauses = tokens.map((token) => {
+    const tokenRegex = new RegExp(escapeRegex(token), "i");
+    return { $or: [{ name: tokenRegex }, { nameHindi: tokenRegex }] };
+  });
 
-  let foods = await Food.find({
+  const query = {
     isActive: true,
     $or: [
       { name: safeRegex },
       { nameHindi: safeRegex },
+      ...(tokenClauses.length > 0 ? [{ $and: tokenClauses }] : []),
     ],
-  })
-    .limit(limit)
+  };
+
+  let foods = await Food.find(query)
+    .limit(Math.min(80, limit * 6))
     .lean()
     .select(
       "name nameHindi unit caloriesPerUnit proteinPerUnit carbsPerUnit fatsPerUnit fiberPerUnit calciumPerUnit vitamins category dietType"
     );
 
+  foods = rankAndTrimFoods(foods, normalizedTerm, limit);
+
   if (!foods.length) {
-    foods = filterStaticFoods({ q: safeTerm, limit });
+    foods = filterStaticFoods({ q: normalizedTerm, limit });
   }
 
   setCache(cacheKey, foods);
