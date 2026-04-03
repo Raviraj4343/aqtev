@@ -18,7 +18,10 @@ export function AuthProvider({ children }){
     }finally{ setLoading(false) }
   }
 
-  useEffect(()=>{ load() }, [])
+  useEffect(()=>{
+    api.prewarmBackend?.().catch(()=>{})
+    load()
+  }, [])
 
   const login = async (payload, options = {})=>{
     const rememberMe = Boolean(options?.rememberMe)

@@ -68,20 +68,80 @@ export default function Dashboard(){
   const [boostError, setBoostError] = useState('')
   const [summaryRows, setSummaryRows] = useState([])
 
+  const buildSummaryRows = (logs = []) => {
+    const loggedDays = logs.length
+    const avgCalories = loggedDays
+      ? Math.round(logs.reduce((sum, log) => sum + Number(log?.totalCalories || 0), 0) / loggedDays)
+      : 0
+    const avgProtein = loggedDays
+      ? Math.round(logs.reduce((sum, log) => sum + Number(log?.totalProtein || 0), 0) / loggedDays)
+      : 0
+    const avgFiber = loggedDays
+      ? Math.round(logs.reduce((sum, log) => sum + Number(log?.totalFiber || 0), 0) / loggedDays)
+      : 0
+
+    const waterValues = logs
+      .map((log) => waterToLiters(log?.waterIntake))
+      .filter((value) => value !== null)
+    const avgWater = waterValues.length
+      ? Math.round((waterValues.reduce((sum, value) => sum + value, 0) / waterValues.length) * 10) / 10
+      : null
+
+    const sleepValues = logs
+      .map((log) => Number(log?.sleepHours))
+      .filter((value) => Number.isFinite(value) && value > 0)
+    const avgSleep = sleepValues.length
+      ? Math.round((sleepValues.reduce((sum, value) => sum + value, 0) / sleepValues.length) * 10) / 10
+      : null
+
+    const stepValues = logs
+      .map((log) => Number(log?.steps))
+      .filter((value) => Number.isFinite(value) && value > 0)
+    const avgSteps = stepValues.length
+      ? Math.round(stepValues.reduce((sum, value) => sum + value, 0) / stepValues.length)
+      : null
+
+    return [
+      { label: isHindi ? 'औसत कैलोरी' : 'Average calories', note: isHindi ? 'प्रति दिन' : 'Per day', value: loggedDays ? `${avgCalories}` : '-' },
+      { label: isHindi ? 'औसत प्रोटीन' : 'Average protein', note: isHindi ? 'प्रति दिन' : 'Per day', value: loggedDays ? `${avgProtein} g` : '-' },
+      { label: isHindi ? 'औसत नींद' : 'Average sleep', note: isHindi ? 'लॉग की गई रातें' : 'Logged nights', value: avgSleep !== null ? `${avgSleep} h` : '-' },
+      { label: isHindi ? 'औसत पानी' : 'Average water', note: isHindi ? 'लॉग किए गए दिन' : 'Logged days', value: avgWater !== null ? `${avgWater} L` : '-' },
+      { label: isHindi ? 'औसत फाइबर' : 'Average fiber', note: isHindi ? 'प्रति दिन' : 'Per day', value: loggedDays ? `${avgFiber} g` : '-' },
+      { label: isHindi ? 'औसत कदम' : 'Average steps', note: isHindi ? 'लॉग किए गए दिन' : 'Logged days', value: avgSteps !== null ? `${avgSteps}` : '-' }
+    ]
+  }
+
   useEffect(() => {
     let mounted = true
 
     async function load(){
       try {
-        const [res, todayRes, historyRes, weightRes] = await Promise.all([
+        const [res, todayRes] = await Promise.all([
           api.getHealthStats(),
-          api.getTodayInsight().catch(() => null),
-          api.getHistoryLogs().catch(() => null),
+          api.getTodayInsight().catch(() => null)
+        ])
+        if (!mounted) return
+
+        const data = res?.data || {}
+        const todayData = todayRes?.data?.today || {}
+
+        setStats({
+          bmi: data.bmi ?? null,
+          requiredCalories: data.requiredCalories ?? null,
+          requiredProtein: data.requiredProtein ?? null
+        })
+        setToday({
+          calories: todayData.calories ?? 0,
+          protein: todayData.protein ?? 0
+        })
+        setLoading(false)
+
+        const [historyRes, weightRes] = await Promise.all([
+          api.getHistoryLogs({ days: 7, summary: 1 }).catch(() => null),
           api.getWeightHistory({ days: 7 }).catch(() => null)
         ])
         if (!mounted) return
-        const data = res?.data || {}
-        const todayData = todayRes?.data?.today || {}
+
         const logs = Array.isArray(historyRes?.data) ? historyRes.data : []
         const latestLog = logs[0] || null
         const weightLogs = Array.isArray(weightRes?.data?.logs) ? weightRes.data.logs : []
@@ -90,9 +150,7 @@ export default function Dashboard(){
         const timeline = []
 
         if (latestLog) {
-          const mealCount = Array.isArray(latestLog.meals)
-            ? latestLog.meals.reduce((sum, meal) => sum + (Array.isArray(meal.items) ? meal.items.length : 0), 0)
-            : 0
+          const mealCount = Number(latestLog?.mealItemCount || 0)
 
           timeline.push({
             id: `log-${latestLog.date}`,
@@ -136,57 +194,7 @@ export default function Dashboard(){
         }
 
         setActivityItems(timeline.slice(0, 4))
-
-        const loggedDays = logs.length
-        const avgCalories = loggedDays
-          ? Math.round(logs.reduce((sum, log) => sum + Number(log?.totalCalories || 0), 0) / loggedDays)
-          : 0
-        const avgProtein = loggedDays
-          ? Math.round(logs.reduce((sum, log) => sum + Number(log?.totalProtein || 0), 0) / loggedDays)
-          : 0
-        const avgFiber = loggedDays
-          ? Math.round(logs.reduce((sum, log) => sum + Number(log?.totalFiber || 0), 0) / loggedDays)
-          : 0
-
-        const waterValues = logs
-          .map((log) => waterToLiters(log?.waterIntake))
-          .filter((value) => value !== null)
-        const avgWater = waterValues.length
-          ? Math.round((waterValues.reduce((sum, value) => sum + value, 0) / waterValues.length) * 10) / 10
-          : null
-
-        const sleepValues = logs
-          .map((log) => Number(log?.sleepHours))
-          .filter((value) => Number.isFinite(value) && value > 0)
-        const avgSleep = sleepValues.length
-          ? Math.round((sleepValues.reduce((sum, value) => sum + value, 0) / sleepValues.length) * 10) / 10
-          : null
-
-        const stepValues = logs
-          .map((log) => Number(log?.steps))
-          .filter((value) => Number.isFinite(value) && value > 0)
-        const avgSteps = stepValues.length
-          ? Math.round(stepValues.reduce((sum, value) => sum + value, 0) / stepValues.length)
-          : null
-
-        setSummaryRows([
-          { label: isHindi ? 'औसत कैलोरी' : 'Average calories', note: isHindi ? 'प्रति दिन' : 'Per day', value: loggedDays ? `${avgCalories}` : '-' },
-          { label: isHindi ? 'औसत प्रोटीन' : 'Average protein', note: isHindi ? 'प्रति दिन' : 'Per day', value: loggedDays ? `${avgProtein} g` : '-' },
-          { label: isHindi ? 'औसत नींद' : 'Average sleep', note: isHindi ? 'लॉग की गई रातें' : 'Logged nights', value: avgSleep !== null ? `${avgSleep} h` : '-' },
-          { label: isHindi ? 'औसत पानी' : 'Average water', note: isHindi ? 'लॉग किए गए दिन' : 'Logged days', value: avgWater !== null ? `${avgWater} L` : '-' },
-          { label: isHindi ? 'औसत फाइबर' : 'Average fiber', note: isHindi ? 'प्रति दिन' : 'Per day', value: loggedDays ? `${avgFiber} g` : '-' },
-          { label: isHindi ? 'औसत कदम' : 'Average steps', note: isHindi ? 'लॉग किए गए दिन' : 'Logged days', value: avgSteps !== null ? `${avgSteps}` : '-' }
-        ])
-
-        setStats({
-          bmi: data.bmi ?? null,
-          requiredCalories: data.requiredCalories ?? null,
-          requiredProtein: data.requiredProtein ?? null
-        })
-        setToday({
-          calories: todayData.calories ?? 0,
-          protein: todayData.protein ?? 0
-        })
+        setSummaryRows(buildSummaryRows(logs))
       } catch (e) {
         // keep graceful empty state
       } finally {

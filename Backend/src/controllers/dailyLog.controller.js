@@ -197,6 +197,7 @@ const getLogByDate = asyncHandler(async (req, res) => {
 
 const getHistory = asyncHandler(async (req, res) => {
   const days = Math.min(parseInt(req.query.days) || 7, 30);
+  const summaryOnly = ["1", "true", "yes"].includes(String(req.query.summary || "").toLowerCase());
 
   // Build date range
   const dates = [];
@@ -206,14 +207,39 @@ const getHistory = asyncHandler(async (req, res) => {
     dates.push(d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }));
   }
 
-  const logs = await DailyLog.find({
+  let historyQuery = DailyLog.find({
     userId: req.user._id,
     date: { $in: dates },
   }).sort({ date: -1 });
 
+  if (summaryOnly) {
+    historyQuery = historyQuery.select("date meals totalCalories totalProtein totalFiber waterIntake sleepHours steps");
+  }
+
+  const logs = await historyQuery.lean();
+
+  const payload = summaryOnly
+    ? logs.map((log) => {
+        const mealItemCount = Array.isArray(log?.meals)
+          ? log.meals.reduce((sum, meal) => sum + (Array.isArray(meal?.items) ? meal.items.length : 0), 0)
+          : 0;
+
+        return {
+          date: log?.date,
+          totalCalories: log?.totalCalories || 0,
+          totalProtein: log?.totalProtein || 0,
+          totalFiber: log?.totalFiber || 0,
+          waterIntake: log?.waterIntake || null,
+          sleepHours: log?.sleepHours ?? null,
+          steps: log?.steps ?? null,
+          mealItemCount,
+        };
+      })
+    : logs;
+
   return res
     .status(200)
-    .json(new ApiResponse(200, logs, `Last ${days} day history fetched.`));
+    .json(new ApiResponse(200, payload, `Last ${days} day history fetched.`));
 });
 
 export {

@@ -448,8 +448,9 @@ export function getTodayLog(){
   return request('/dailyLog/today')
 }
 
-export function getHistoryLogs(){
-  return request('/dailyLog/history')
+export function getHistoryLogs(query = {}){
+  const qs = new URLSearchParams(query).toString()
+  return request(`/dailyLog/history${qs ? `?${qs}` : ''}`)
 }
 
 export function createOrUpdateDailyLog(payload){
