@@ -4,6 +4,13 @@ FitCek is a full-stack health tracking application that helps users monitor dail
 
 It provides real-time tracking, intelligent suggestions, and a clean user experience designed for long-term health improvement.
 
+![Frontend](https://img.shields.io/badge/Frontend-React-blue)
+![Backend](https://img.shields.io/badge/Backend-Node.js-green)
+![Database](https://img.shields.io/badge/Database-MongoDB-brightgreen)
+![Deployment](https://img.shields.io/badge/Deployment-Vercel-black)
+![Backend Hosting](https://img.shields.io/badge/Backend-Render-purple)
+![License](https://img.shields.io/badge/License-ISC-orange)
+
 ---
 
 ## 🌐 Live Demo
