@@ -28,16 +28,16 @@ const mealItemSchema = new mongoose.Schema(
 
 mealItemSchema.pre("save", function () {
   this.totalCalories = parseFloat(
-    (this.caloriesPerUnit * this.quantity).toFixed(1)
+    (this.caloriesPerUnit * this.quantity).toFixed(2)
   );
   this.totalProtein = parseFloat(
-    (this.proteinPerUnit * this.quantity).toFixed(1)
+    (this.proteinPerUnit * this.quantity).toFixed(2)
   );
-  this.totalCarbs = parseFloat((this.carbsPerUnit * this.quantity).toFixed(1));
-  this.totalFats = parseFloat((this.fatsPerUnit * this.quantity).toFixed(1));
-  this.totalFiber = parseFloat((this.fiberPerUnit * this.quantity).toFixed(1));
+  this.totalCarbs = parseFloat((this.carbsPerUnit * this.quantity).toFixed(2));
+  this.totalFats = parseFloat((this.fatsPerUnit * this.quantity).toFixed(2));
+  this.totalFiber = parseFloat((this.fiberPerUnit * this.quantity).toFixed(2));
   this.totalCalcium = parseFloat(
-    (this.calciumPerUnit * this.quantity).toFixed(1)
+    (this.calciumPerUnit * this.quantity).toFixed(2)
   );
 });
 
@@ -129,12 +129,12 @@ dailyLogSchema.pre("save", function () {
       const fiber = (item.fiberPerUnit || 0) * (item.quantity || 1);
       const calcium = (item.calciumPerUnit || 0) * (item.quantity || 1);
 
-      item.totalCalories = parseFloat(cal.toFixed(1));
-      item.totalProtein = parseFloat(prot.toFixed(1));
-      item.totalCarbs = parseFloat(carbs.toFixed(1));
-      item.totalFats = parseFloat(fats.toFixed(1));
-      item.totalFiber = parseFloat(fiber.toFixed(1));
-      item.totalCalcium = parseFloat(calcium.toFixed(1));
+      item.totalCalories = parseFloat(cal.toFixed(2));
+      item.totalProtein = parseFloat(prot.toFixed(2));
+      item.totalCarbs = parseFloat(carbs.toFixed(2));
+      item.totalFats = parseFloat(fats.toFixed(2));
+      item.totalFiber = parseFloat(fiber.toFixed(2));
+      item.totalCalcium = parseFloat(calcium.toFixed(2));
 
       totalCalories += cal;
       totalProtein += prot;
@@ -145,12 +145,12 @@ dailyLogSchema.pre("save", function () {
     });
   });
 
-  this.totalCalories = Math.round(totalCalories);
-  this.totalProtein = parseFloat(totalProtein.toFixed(1));
-  this.totalCarbs = parseFloat(totalCarbs.toFixed(1));
-  this.totalFats = parseFloat(totalFats.toFixed(1));
-  this.totalFiber = parseFloat(totalFiber.toFixed(1));
-  this.totalCalcium = parseFloat(totalCalcium.toFixed(1));
+  this.totalCalories = parseFloat(totalCalories.toFixed(2));
+  this.totalProtein = parseFloat(totalProtein.toFixed(2));
+  this.totalCarbs = parseFloat(totalCarbs.toFixed(2));
+  this.totalFats = parseFloat(totalFats.toFixed(2));
+  this.totalFiber = parseFloat(totalFiber.toFixed(2));
+  this.totalCalcium = parseFloat(totalCalcium.toFixed(2));
 });
 
 const DailyLog = mongoose.model("DailyLog", dailyLogSchema);

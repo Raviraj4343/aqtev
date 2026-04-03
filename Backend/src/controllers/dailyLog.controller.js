@@ -112,12 +112,12 @@ const enrichMeals = async (meals) => {
         fatsPerUnit: food.fatsPerUnit || 0,
         fiberPerUnit: food.fiberPerUnit || 0,
         calciumPerUnit: food.calciumPerUnit || 0,
-        totalCalories: parseFloat((food.caloriesPerUnit * quantity).toFixed(1)),
-        totalProtein: parseFloat((food.proteinPerUnit * quantity).toFixed(1)),
-        totalCarbs: parseFloat(((food.carbsPerUnit || 0) * quantity).toFixed(1)),
-        totalFats: parseFloat(((food.fatsPerUnit || 0) * quantity).toFixed(1)),
-        totalFiber: parseFloat(((food.fiberPerUnit || 0) * quantity).toFixed(1)),
-        totalCalcium: parseFloat(((food.calciumPerUnit || 0) * quantity).toFixed(1)),
+        totalCalories: parseFloat((food.caloriesPerUnit * quantity).toFixed(2)),
+        totalProtein: parseFloat((food.proteinPerUnit * quantity).toFixed(2)),
+        totalCarbs: parseFloat(((food.carbsPerUnit || 0) * quantity).toFixed(2)),
+        totalFats: parseFloat(((food.fatsPerUnit || 0) * quantity).toFixed(2)),
+        totalFiber: parseFloat(((food.fiberPerUnit || 0) * quantity).toFixed(2)),
+        totalCalcium: parseFloat(((food.calciumPerUnit || 0) * quantity).toFixed(2)),
       });
     }
 
@@ -194,12 +194,12 @@ const updateMealSection = asyncHandler(async (req, res) => {
       fatsPerUnit: food.fatsPerUnit || 0,
       fiberPerUnit: food.fiberPerUnit || 0,
       calciumPerUnit: food.calciumPerUnit || 0,
-      totalCalories: parseFloat((food.caloriesPerUnit * quantity).toFixed(1)),
-      totalProtein: parseFloat((food.proteinPerUnit * quantity).toFixed(1)),
-      totalCarbs: parseFloat(((food.carbsPerUnit || 0) * quantity).toFixed(1)),
-      totalFats: parseFloat(((food.fatsPerUnit || 0) * quantity).toFixed(1)),
-      totalFiber: parseFloat(((food.fiberPerUnit || 0) * quantity).toFixed(1)),
-      totalCalcium: parseFloat(((food.calciumPerUnit || 0) * quantity).toFixed(1)),
+      totalCalories: parseFloat((food.caloriesPerUnit * quantity).toFixed(2)),
+      totalProtein: parseFloat((food.proteinPerUnit * quantity).toFixed(2)),
+      totalCarbs: parseFloat(((food.carbsPerUnit || 0) * quantity).toFixed(2)),
+      totalFats: parseFloat(((food.fatsPerUnit || 0) * quantity).toFixed(2)),
+      totalFiber: parseFloat(((food.fiberPerUnit || 0) * quantity).toFixed(2)),
+      totalCalcium: parseFloat(((food.calciumPerUnit || 0) * quantity).toFixed(2)),
     });
   }
 
