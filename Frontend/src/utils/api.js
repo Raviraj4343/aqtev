@@ -555,9 +555,6 @@ export function getGuideLiveSuggestion(payload = {}){
   const buildConversationalFallback = (reason = 'conversation-fallback') => {
     const pick = (list = []) => list[Math.floor(Math.random() * list.length)] || ''
     const concisePrompt = latestPrompt || 'Can you guide me based on today?'
-    const knownProfileLine = [knownGoal ? `goal: ${knownGoal}` : '', knownDiet ? `diet: ${knownDiet}` : '', knownActivity ? `activity: ${knownActivity}` : '', knownWeight ? `weight: ${knownWeight}` : '']
-      .filter(Boolean)
-      .join(', ')
 
     const promptLower = concisePrompt.toLowerCase()
     const budgetMatch = promptLower.match(/(?:rs\.?|inr)?\s*(\d{2,5})/i)
@@ -565,12 +562,26 @@ export function getGuideLiveSuggestion(payload = {}){
     const wantsProtein = /protein|high protein|muscle|gain|lean/.test(promptLower)
     const wantsWeightLoss = /fat loss|weight loss|lose weight|cut/.test(promptLower)
     const wantsMeal = /meal|breakfast|lunch|dinner|snack|food|eat/.test(promptLower)
+    const goalText = knownGoal.toLowerCase()
+    const dietText = knownDiet.toLowerCase()
+    const activityText = knownActivity.toLowerCase()
 
     let coreReply = pick([
-      'Try a balanced plate: 1 protein source, 1 fiber-rich carb, and vegetables.',
-      'Keep it simple: protein first, then smart carbs, then veggies for volume.',
-      'A good default: high-protein base + moderate carbs + plenty of vegetables.'
+      'Use a balanced plate: protein, quality carbs, and vegetables.',
+      'Keep meals simple: protein first, then carbs, then vegetables.',
+      'Base each meal on protein plus vegetables, then add carbs as needed.'
     ])
+
+    if (!wantsProtein && !wantsWeightLoss && !wantsMeal) {
+      if (goalText.includes('muscle')) {
+        coreReply = 'For muscle gain, keep protein high and eat consistent meals through the day.'
+      } else if (goalText.includes('weight loss') || goalText.includes('fat loss')) {
+        coreReply = 'For fat loss, keep portions controlled and prioritize protein with vegetables.'
+      } else {
+        coreReply = 'For maintenance, keep portions steady and focus on balanced whole-food meals.'
+      }
+    }
+
     if (wantsProtein && budget && budget <= 80) {
       coreReply = pick([
         'Best budget protein picks: eggs, roasted chana, curd, milk, and paneer in small portions.',
@@ -609,20 +620,22 @@ export function getGuideLiveSuggestion(payload = {}){
           'Try one now: protein bowl, dal meal, or curd-chana snack.'
         ])
 
+    const contextLine = pick([
+      dietText.includes('veg')
+        ? 'Keep vegetarian protein sources in each meal (dal, paneer, curd, soy, chana).'
+        : 'Keep a protein source in each meal and avoid long meal gaps.',
+      activityText.includes('active')
+        ? 'Because your activity is high, include a recovery snack after workouts.'
+        : 'With moderate activity, steady meal timing will improve consistency.',
+      knownWeight
+        ? `Keep hydration steady through the day for your current body weight.`
+        : 'Keep hydration steady through the day.'
+    ])
+
     const reply = [
       coreReply,
       optionLine,
-      knownProfileLine
-        ? pick([
-            `Using your profile context (${knownProfileLine}).`,
-            `Personalized with your profile (${knownProfileLine}).`,
-            `Tailored from your saved profile (${knownProfileLine}).`
-          ])
-        : pick([
-            'I can personalize more once profile details are set.',
-            'Add profile details for sharper recommendations.',
-            'Set profile data to get even more precise suggestions.'
-          ])
+      contextLine
     ].join('\n')
 
     return {

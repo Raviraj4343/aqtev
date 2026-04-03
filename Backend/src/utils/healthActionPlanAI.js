@@ -15,10 +15,10 @@ const getModelCandidates = () => {
 
 const getGeminiApiKey = () => {
   const key = String(
-    process.env.GUIDE_API_KEY || process.env.GEMINI_API_KEY || process.env.HEALTH_API || ""
+    process.env.BOT_API_KEY || process.env.GUIDE_API_KEY || process.env.GEMINI_API_KEY || process.env.HEALTH_API || ""
   ).trim();
   if (!key) {
-    throw new Error("GUIDE_API_KEY (or GEMINI_API_KEY) is missing in environment variables.");
+    throw new Error("BOT_API_KEY (or GUIDE_API_KEY / GEMINI_API_KEY) is missing in environment variables.");
   }
   return key;
 };
@@ -273,12 +273,14 @@ ${String(userPrompt || "").trim()}
 
 Instructions:
 - Respond conversationally, not in rigid templates.
-- Keep replies short (usually 2-6 lines), clear, and personalized.
+- Keep replies short (usually 2-5 lines), clear, and sober.
 - Use chat context and latest user intent to adapt your response.
 - Give an instant direct answer in the same message.
 - Include multiple practical options when possible (for example low, medium, high effort).
 - Do not ask follow-up questions unless the user explicitly asks for clarification.
 - Do not ask for profile details that are already present in User context above.
+- Use the user context silently; do not say phrases like "based on your profile" unless asked.
+- Do not dump raw profile fields in the reply unless user asks for those values.
 - Avoid repeating the same structure every turn.
 - Avoid medical diagnosis; if risk exists, mention it calmly and suggest professional care when needed.
 - Do NOT return JSON unless explicitly asked.

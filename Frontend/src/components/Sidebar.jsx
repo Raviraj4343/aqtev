@@ -6,7 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 import ConfirmationModal from './ConfirmationModal'
 import * as api from '../utils/api'
 
-const SHOW_LIVE_SUGGESTION_UI = false
+const SHOW_LIVE_SUGGESTION_UI = true
 
 const baseItems = [
   {
@@ -289,8 +289,12 @@ export default function Sidebar({ isOpen = false, onClose }){
             >
               x
             </button>
-            <h3 id="sidebar-live-modal-title">{t('sidebar.liveSuggestionTitle')}</h3>
-            <p className="muted">{t('sidebar.liveSuggestionHint')}</p>
+            <div className="sidebar-live-title-row">
+              <h3 id="sidebar-live-modal-title" className="sidebar-live-title">
+                <span className="sidebar-live-dot" aria-hidden="true" />
+                {t('sidebar.liveSuggestionTitle')}
+              </h3>
+            </div>
 
             <div className="sidebar-live-head-row">
               <button type="button" className="btn-ghost sidebar-live-new" onClick={handleNewChat}>{t('sidebar.newChat')}</button>
@@ -306,7 +310,7 @@ export default function Sidebar({ isOpen = false, onClose }){
               {chatMessages.map((message) => (
                 <div key={message.id} className={`sidebar-chat-bubble ${message.role === 'assistant' ? 'bot' : 'user'}`}>
                   <strong>{message.role === 'assistant' ? t('sidebar.coachName') : t('sidebar.you')}</strong>
-                  {message.role === 'assistant' ? <pre>{message.content}</pre> : <p>{message.content}</p>}
+                  <p>{message.content}</p>
                 </div>
               ))}
 
