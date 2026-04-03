@@ -6,6 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 
 const formatCategory = (value) => String(value || 'General').replace(/_/g, ' ')
 const formatDiet = (value) => String(value || 'Mixed').replace(/_/g, ' ')
+const FOOD_PREVIEW_LIMIT = 80
 
 export default function Foods(){
   const { language } = useLanguage()
@@ -31,7 +32,7 @@ export default function Foods(){
     let mounted = true
     setLoading(true)
 
-    const query = { limit: 80 }
+    const query = { limit: FOOD_PREVIEW_LIMIT }
     if (activeCategory) query.category = activeCategory
 
     api.getAllFoods(query)
@@ -63,7 +64,6 @@ export default function Foods(){
           </p>
         </div>
         <div className="feature-hero-aside">
-          <span className="feature-date-chip">{loading ? (isHindi ? 'कैटलॉग लोड हो रहा है' : 'Loading catalog') : (isHindi ? `${foods.length} खाद्य पदार्थ उपलब्ध` : `${foods.length} foods available`)}</span>
           <div className="feature-orbit feature-orbit-blue">
             <strong>{loading ? '-' : categories.length}</strong>
             <span>{isHindi ? 'कैटेगरी' : 'categories'}</span>
