@@ -6,7 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 import ConfirmationModal from './ConfirmationModal'
 import * as api from '../utils/api'
 
-const SHOW_LIVE_SUGGESTION_UI = true
+const SHOW_LIVE_SUGGESTION_UI = false
 
 const baseItems = [
   {
