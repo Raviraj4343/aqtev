@@ -98,7 +98,7 @@ export default function GuestNutritionCheck(){
     })
 
     return {
-      calories: Math.round(base.calories),
+      calories: Number(base.calories.toFixed(1)),
       protein: Number(base.protein.toFixed(1)),
       carbs: Number(base.carbs.toFixed(1)),
       fats: Number(base.fats.toFixed(1)),
@@ -170,7 +170,7 @@ export default function GuestNutritionCheck(){
               <div>
                 <strong>{pendingFood.name}</strong>
                 <span>
-                  {pendingFood.caloriesPerUnit} kcal • {pendingFood.proteinPerUnit || 0} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'} • {isHindi ? 'प्रति 100mg' : 'per 100mg'}
+                  {pendingFood.caloriesPerUnit} kcal • {pendingFood.proteinPerUnit || 0} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'} • {isHindi ? 'प्रति' : 'per'} {pendingFood.unit || 'serving'}
                 </span>
               </div>
               <div className="guest-pending-actions">
@@ -201,7 +201,7 @@ export default function GuestNutritionCheck(){
                       <div>
                         <strong>{item.name}</strong>
                         <span>
-                          {isHindi ? 'मात्रा' : 'Qty'} {item.quantity} • {Math.round(item.caloriesPerUnit * item.quantity)} kcal • {Number((item.proteinPerUnit * item.quantity).toFixed(1))} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'}
+                          {isHindi ? 'मात्रा' : 'Qty'} {item.quantity} • {Number((item.caloriesPerUnit * item.quantity).toFixed(1))} kcal • {Number((item.proteinPerUnit * item.quantity).toFixed(1))} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'}
                         </span>
                       </div>
                       <button type="button" className="guest-remove-btn" onClick={() => handleRemove(item.id)}>{isHindi ? 'हटाएं' : 'Remove'}</button>

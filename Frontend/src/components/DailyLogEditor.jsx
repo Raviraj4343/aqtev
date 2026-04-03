@@ -129,7 +129,7 @@ export default function DailyLogEditor({
             <div className="meal-add-copy">
               <strong>{pendingFood.name}</strong>
               <span>
-                {pendingFood.caloriesPerUnit} kcal • {pendingFood.proteinPerUnit || 0} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'} • {isHindi ? 'प्रति 100mg' : 'per 100mg'}
+                {pendingFood.caloriesPerUnit} kcal • {pendingFood.proteinPerUnit || 0} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'} • {isHindi ? 'प्रति' : 'per'} {pendingFood.unit || 'serving'}
               </span>
             </div>
             <div className="meal-add-controls">

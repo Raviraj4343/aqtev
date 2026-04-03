@@ -133,7 +133,7 @@ export default function DailyLog(){
   const summary = useMemo(() => {
     const meals = draftMeals || []
     return [
-      { label: isHindi ? 'कैलोरी' : 'Calories', value: Math.round(liveCalories), suffix: 'kcal' },
+      { label: isHindi ? 'कैलोरी' : 'Calories', value: Number(liveCalories.toFixed(1)), suffix: 'kcal' },
       { label: isHindi ? 'प्रोटीन' : 'Protein', value: Number(liveProtein.toFixed(1)), suffix: 'g' },
       { label: isHindi ? 'भोजन' : 'Meals', value: meals.length, suffix: isHindi ? 'लॉग' : 'logged' },
       { label: isHindi ? 'कदम' : 'Steps', value: draftVitals.steps || 0, suffix: isHindi ? 'आज' : 'today' }
@@ -160,7 +160,7 @@ export default function DailyLog(){
         <div className="feature-hero-aside">
           <span className="feature-date-chip">{formatDate(new Date())}</span>
           <div className="feature-orbit feature-orbit-soft">
-            <strong>{loading ? '-' : `${Math.round(liveCalories)}`}</strong>
+            <strong>{loading ? '-' : `${Number(liveCalories.toFixed(1))}`}</strong>
             <span>{isHindi ? 'लॉग की गई कैलोरी' : 'calories logged'}</span>
           </div>
         </div>
@@ -223,7 +223,7 @@ export default function DailyLog(){
                       <div key={item.draftId} className="snapshot-item">
                         <div className="snapshot-item-copy">
                           <strong>{item.foodName}</strong>
-                          <span>{isHindi ? 'मात्रा' : 'Qty'} {item.quantity} • {Math.round((item.caloriesPerUnit || 0) * item.quantity)} kcal</span>
+                          <span>{isHindi ? 'मात्रा' : 'Qty'} {item.quantity} • {Number((((item.caloriesPerUnit || 0) * item.quantity)).toFixed(1))} kcal</span>
                         </div>
                         <button
                           type="button"
