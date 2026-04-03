@@ -1,4 +1,5 @@
 # 🏋️ FitCek – Smart Health Tracking Platform
+
 ---
 ![Frontend](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react&logoColor=white)
 ![Build Tool](https://img.shields.io/badge/Build-Vite-646CFF?logo=vite&logoColor=white)
@@ -221,15 +222,45 @@ This project was built to solve real-world health tracking problems by combining
 
 ## 📸 Screenshots
 
-<img width="1276" height="857" alt="image" src="https://github.com/user-attachments/assets/6b008519-6046-4dbe-a374-65419e6356ac" />
-<img width="1203" height="864" alt="image" src="https://github.com/user-attachments/assets/d12534e0-1035-44a9-ab77-427c7883b755" />
-
-<img width="1196" height="866" alt="image" src="https://github.com/user-attachments/assets/1d78ac66-7842-44e3-a3da-d9363b7ab600" />
-
+---
+---
+<img width="1353" height="872" alt="image" src="https://github.com/user-attachments/assets/c014191b-df78-4c2d-9aa1-2b48c5863d53" />
+---
+<img width="1260" height="878" alt="image" src="https://github.com/user-attachments/assets/c2eb3a3e-cb00-4e2b-8673-aa31034f5a93" />
+---
+<img width="1242" height="802" alt="image" src="https://github.com/user-attachments/assets/69752e75-7c23-4efb-af21-73f079423dfc" />
+---
+<img width="1251" height="793" alt="image" src="https://github.com/user-attachments/assets/bb81087b-55d7-40b9-b27a-7b3eaa84d1e0" />
+---
+<img width="1232" height="616" alt="image" src="https://github.com/user-attachments/assets/c860a80d-d0a7-4789-8198-ce667f0321fa" />
 
 
 ---
+---
+
+## 👨‍💻 Author
+
+<p align="center">
+  <b>Ravi Raj</b><br><br>
+
+  <a href="https://www.linkedin.com/in/ravi-r-318b55247/">
+    <img src="https://img.shields.io/badge/LinkedIn-Ravi%20Raj-blue?style=for-the-badge&logo=linkedin"/>
+  </a>
+
+  <a href="https://github.com/Raviraj4343">
+    <img src="https://img.shields.io/badge/GitHub-RaviRaj-black?style=for-the-badge&logo=github"/>
+  </a>
+
+  <a href="mailto:raviraj06112005@gmail.com">
+    <img src="https://img.shields.io/badge/Email-Contact-red?style=for-the-badge&logo=gmail"/>
+  </a>
+</p>
+
 
 ## 📄 License
 
 ISC
+
+<p align="center">
+  Built with ❤️ by <b>Ravi Raj</b>
+</p>
