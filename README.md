@@ -4,12 +4,22 @@ FitCek is a full-stack health tracking application that helps users monitor dail
 
 It provides real-time tracking, intelligent suggestions, and a clean user experience designed for long-term health improvement.
 
-![Frontend](https://img.shields.io/badge/Frontend-React-blue)
-![Backend](https://img.shields.io/badge/Backend-Node.js-green)
-![Database](https://img.shields.io/badge/Database-MongoDB-brightgreen)
-![Deployment](https://img.shields.io/badge/Deployment-Vercel-black)
-![Backend Hosting](https://img.shields.io/badge/Backend-Render-purple)
-![License](https://img.shields.io/badge/License-ISC-orange)
+![Frontend](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react&logoColor=white)
+![Build Tool](https://img.shields.io/badge/Build-Vite-646CFF?logo=vite&logoColor=white)
+![Backend](https://img.shields.io/badge/Backend-Node.js-339933?logo=node.js&logoColor=white)
+![Framework](https://img.shields.io/badge/Framework-Express-000000?logo=express&logoColor=white)
+![Database](https://img.shields.io/badge/Database-MongoDB-47A248?logo=mongodb&logoColor=white)
+![Media](https://img.shields.io/badge/Media-Cloudinary-3448C5?logo=cloudinary&logoColor=white)
+![ODM](https://img.shields.io/badge/ODM-Mongoose-880000?logo=mongoose&logoColor=white)
+![Realtime](https://img.shields.io/badge/Realtime-Socket.IO-010101?logo=socket.io&logoColor=white)
+![Auth](https://img.shields.io/badge/Auth-JWT-000000?logo=jsonwebtokens&logoColor=white)
+![AI](https://img.shields.io/badge/AI-Google_Gemini-4285F4?logo=google&logoColor=white)
+![Email](https://img.shields.io/badge/Email-Brevo-0B996E?logo=mailboxdotorg&logoColor=white)
+![Mobile](https://img.shields.io/badge/Mobile-Capacitor-119EFF?logo=capacitor&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
+![Deployment](https://img.shields.io/badge/Frontend-Vercel-000000?logo=vercel&logoColor=white)
+![Backend Hosting](https://img.shields.io/badge/Backend-Render-46E3B7?logo=render&logoColor=white)
+
 
 ---
 
