@@ -1,4 +1,4 @@
-const Food = [
+const RAW_FOOD = [
   {"name":"Roti (Chapati)","nameHindi":"रोटी","caloriesPerUnit":120,"proteinPerUnit":3,"carbsPerUnit":22,"fatsPerUnit":1,"fiberPerUnit":3,"calciumPerUnit":10,"vitamins":["Vitamin B1"],"unit":"piece","category":"grain","dietType":"veg"},
   {"name":"Plain Rice","nameHindi":"चावल","caloriesPerUnit":130,"proteinPerUnit":2.5,"carbsPerUnit":28,"fatsPerUnit":0.3,"fiberPerUnit":0.4,"calciumPerUnit":5,"vitamins":["Vitamin B1"],"unit":"bowl","category":"grain","dietType":"veg"},
   {"name":"Dal Tadka","nameHindi":"दाल तड़का","caloriesPerUnit":180,"proteinPerUnit":9,"carbsPerUnit":20,"fatsPerUnit":6,"fiberPerUnit":5,"calciumPerUnit":30,"vitamins":["Vitamin B9"],"unit":"bowl","category":"protein","dietType":"veg"},
@@ -841,5 +841,43 @@ const Food = [
   {"name":"Dark Fantasy Vanilla Fills (Sunfeast)","nameHindi":"सनफीस्ट डार्क फैंटेसी वनीला फिल्स","caloriesPerUnit":225,"proteinPerUnit":2.8,"carbsPerUnit":30,"fatsPerUnit":11,"fiberPerUnit":1,"calciumPerUnit":18,"vitamins":["Vitamin B"],"unit":"3 pieces","category":"snack","dietType":"veg"},
   {"name":"Milk Bikis Cream (Britannia)","nameHindi":"ब्रिटानिया मिल्क बिकीस क्रीम","caloriesPerUnit":180,"proteinPerUnit":2.5,"carbsPerUnit":25,"fatsPerUnit":8,"fiberPerUnit":1,"calciumPerUnit":24,"vitamins":["Vitamin D"],"unit":"4 pieces","category":"snack","dietType":"veg"}
 ];
+
+const BEVERAGE_NAME_REGEX = /(juice|drink|soda|cola|tea|coffee|cooler|lassi|buttermilk|shake|smoothie|electrolyte|energy|water|maaza|frooti|appy|tropicana|real|minute maid|paper boat|pepsi|sprite|fanta|limca|thums up|coca-cola|gatorade|red bull|monster|tzinga|campa|schweppes|bovonto|cold brew)/i;
+const BEVERAGE_UNIT_REGEX = /(ml|glass|bottle|can|tetra|cup)/i;
+
+const normalizeCategory = (item) => {
+  const name = String(item?.name || "");
+  const unit = String(item?.unit || "");
+  const category = String(item?.category || "other");
+
+  const beverageLike = BEVERAGE_NAME_REGEX.test(name) || BEVERAGE_UNIT_REGEX.test(unit);
+  if (!beverageLike) return item;
+
+  // Keep obvious solid snack/chocolate/biscuit items out of beverage bucket.
+  const solidSnackLike = /(biscuit|cookie|chocolate|bar|chips|wafer|cracker|puff|cake|bread|roti|paratha|naan|rice|biryani|momos|roll|sandwich|burger|pizza)/i.test(name);
+  if (solidSnackLike) return item;
+
+  if (["snack", "fruit", "dairy", "other"].includes(category)) {
+    return { ...item, category: "beverage" };
+  }
+
+  return item;
+};
+
+const dedupeByName = (items) => {
+  const seen = new Set();
+  const unique = [];
+
+  for (const item of items) {
+    const key = String(item?.name || "").trim().toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    unique.push(item);
+  }
+
+  return unique;
+};
+
+const Food = dedupeByName(RAW_FOOD.map(normalizeCategory));
 
 export default Food;
