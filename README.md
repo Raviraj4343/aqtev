@@ -29,6 +29,34 @@ It provides real-time tracking, intelligent suggestions, and a clean user experi
 
 * 🔗 Frontend: https://fitcek.vercel.com
 * 🔗 Backend: https://fitcek.onrender.com
+---
+<p align="center">
+  <img src="https://img.shields.io/badge/FitCek-Health%20Tracker-blueviolet?style=for-the-badge"/>
+</p>
+## 🚀 Download FitCek App
+
+<p align="center">
+  <a href="https://github.com/Raviraj4343/fitcek/releases/download/v1.0/FitCek-v1.0.apk">
+    <img src="https://img.shields.io/badge/⬇%20Download%20APK-FitCek-3DDC84?style=for-the-badge&logo=android&logoColor=white"/>
+  </a>
+</p>
+
+<p align="center">
+  📦 Version: <b>v1.0</b> &nbsp; | &nbsp; 📱 Platform: <b>Android</b> &nbsp; | &nbsp; ⚡ Size: <b>~5MB</b>
+</p>
+
+---
+
+### ✨ Why Download?
+
+- 🥗 Smart meal tracking  
+- 📊 Health insights dashboard  
+- 🤖 AI-powered assistance  
+- ⚡ Fast & lightweight experience  
+
+---
+
+> ⚠️ Enable <b>Install from Unknown Sources</b> before installing.
 
 
 ---
