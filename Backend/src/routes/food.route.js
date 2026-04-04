@@ -1,5 +1,11 @@
 import express from "express";
-import { getAllFoods, searchFoods, getFoodById, getCategories, getBoostFoods } from "../controllers/food.controller.js";
+import {
+  getAllFoods,
+  searchFoods,
+  getFoodById,
+  getCategories,
+  getBoostFoods,
+} from "../controllers/food.controller.js";
 
 const router = express.Router();
 
