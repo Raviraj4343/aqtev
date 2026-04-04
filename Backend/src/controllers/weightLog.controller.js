@@ -7,7 +7,6 @@ import User from "../models/user.model.js";
 const getTodayIST = () =>
   new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
-
 const logWeight = asyncHandler(async (req, res) => {
   const { weightKg, note, date } = req.body;
   const logDate = date || getTodayIST();
@@ -31,13 +30,14 @@ const logWeight = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, entry, "Weight logged successfully."));
 });
 
-
 const getWeightHistory = asyncHandler(async (req, res) => {
   const days = Math.min(parseInt(req.query.days) || 7, 90);
 
   const since = new Date();
   since.setDate(since.getDate() - days);
-  const sinceStr = since.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const sinceStr = since.toLocaleDateString("en-CA", {
+    timeZone: "Asia/Kolkata",
+  });
 
   const logs = await WeightLog.find({
     userId: req.user._id,
@@ -73,11 +73,10 @@ const getWeightHistory = asyncHandler(async (req, res) => {
     }
   }
 
-  return res.status(200).json(
-    new ApiResponse(200, { logs, trend }, "Weight history fetched.")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { logs, trend }, "Weight history fetched."));
 });
-
 
 const getWeeklySummary = asyncHandler(async (req, res) => {
   // Get last 8 days to capture a full week
@@ -110,15 +109,14 @@ const getWeeklySummary = asyncHandler(async (req, res) => {
       diff < 0
         ? `You lost ${Math.abs(diff)} kg this week 🔥`
         : diff > 0
-        ? `You gained ${diff} kg this week`
-        : "Weight is stable this week 📊";
+          ? `You gained ${diff} kg this week`
+          : "Weight is stable this week 📊";
   }
 
   return res
     .status(200)
     .json(new ApiResponse(200, summary, "Weekly summary fetched."));
 });
-
 
 const deleteWeightLog = asyncHandler(async (req, res) => {
   const { date } = req.params;
