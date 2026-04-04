@@ -35,16 +35,25 @@ const parseExpiryToMs = (value, fallbackMs) => {
   return amount * unitMs[unit];
 };
 
-
 const issueTokens = async (user, res) => {
   const accessToken = tokenUtils.generateAccessToken(user._id);
   const refreshToken = tokenUtils.generateRefreshToken(user._id);
 
   // Persist refresh token without going through full document save lifecycle.
-  await User.findByIdAndUpdate(user._id, { $set: { refreshToken } }, { new: false });
+  await User.findByIdAndUpdate(
+    user._id,
+    { $set: { refreshToken } },
+    { new: false }
+  );
 
-  const accessMaxAgeMs = parseExpiryToMs(process.env.ACCESS_TOKEN_EXPIRATION, 24 * 60 * 60 * 1000);
-  const refreshMaxAgeMs = parseExpiryToMs(process.env.REFRESH_TOKEN_EXPIRATION, 7 * 24 * 60 * 60 * 1000);
+  const accessMaxAgeMs = parseExpiryToMs(
+    process.env.ACCESS_TOKEN_EXPIRATION,
+    24 * 60 * 60 * 1000
+  );
+  const refreshMaxAgeMs = parseExpiryToMs(
+    process.env.REFRESH_TOKEN_EXPIRATION,
+    7 * 24 * 60 * 60 * 1000
+  );
 
   const accessCookieOpts = {
     ...COOKIE_OPTIONS,
@@ -62,10 +71,11 @@ const issueTokens = async (user, res) => {
   return { accessToken, refreshToken };
 };
 
-
 const signup = asyncHandler(async (req, res) => {
   try {
-    console.log('auth.signup invoked', { bodySnippet: { name: req.body?.name, email: req.body?.email } })
+    console.log("auth.signup invoked", {
+      bodySnippet: { name: req.body?.name, email: req.body?.email },
+    });
     const { name, email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
@@ -74,31 +84,47 @@ const signup = asyncHandler(async (req, res) => {
     }
 
     const user = await User.create({ name, email, password });
-        // Generate a 6-digit verification code, store its hash and expiry, and send it
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        const hashed = crypto.createHash('sha256').update(code).digest('hex');
-        user.emailVerificationCode = hashed;
-        const expireMs = parseInt(process.env.EMAIL_VERIFICATION_EXPIRE_MS) || (parseInt(process.env.EMAIL_VERIFICATION_EXPIRE_MINUTES) ? parseInt(process.env.EMAIL_VERIFICATION_EXPIRE_MINUTES) * 60 * 1000 : 15 * 60 * 1000);
-        user.emailVerificationExpires = Date.now() + expireMs;
-        await user.save({ validateBeforeSave: false });
+    // Generate a 6-digit verification code, store its hash and expiry, and send it
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashed = crypto.createHash("sha256").update(code).digest("hex");
+    user.emailVerificationCode = hashed;
+    const expireMs =
+      parseInt(process.env.EMAIL_VERIFICATION_EXPIRE_MS) ||
+      (parseInt(process.env.EMAIL_VERIFICATION_EXPIRE_MINUTES)
+        ? parseInt(process.env.EMAIL_VERIFICATION_EXPIRE_MINUTES) * 60 * 1000
+        : 15 * 60 * 1000);
+    user.emailVerificationExpires = Date.now() + expireMs;
+    await user.save({ validateBeforeSave: false });
 
-        let emailSent = true;
-        try {
-          console.log('signup: sending verification — BREVO key present:', Boolean(process.env.BREVO_API_KEY), 'SENDER_EMAIL:', process.env.SENDER_EMAIL)
-          await sendemail.sendVerificationEmail(email, user.name, code, { isCode: true });
-        } catch (emailErr) {
-          emailSent = false;
-          console.error('signup: Email send failed — env:', {
-            BREVO: Boolean(process.env.BREVO_API_KEY),
-            SENDER_EMAIL: process.env.SENDER_EMAIL,
-          })
-          console.error('signup: send error stack:', emailErr && emailErr.stack ? emailErr.stack : emailErr);
-          // don't block signup; frontend may offer a resend option
-        }
+    let emailSent = true;
+    try {
+      console.log(
+        "signup: sending verification — BREVO key present:",
+        Boolean(process.env.BREVO_API_KEY),
+        "SENDER_EMAIL:",
+        process.env.SENDER_EMAIL
+      );
+      await sendemail.sendVerificationEmail(email, user.name, code, {
+        isCode: true,
+      });
+    } catch (emailErr) {
+      emailSent = false;
+      console.error("signup: Email send failed — env:", {
+        BREVO: Boolean(process.env.BREVO_API_KEY),
+        SENDER_EMAIL: process.env.SENDER_EMAIL,
+      });
+      console.error(
+        "signup: send error stack:",
+        emailErr && emailErr.stack ? emailErr.stack : emailErr
+      );
+      // don't block signup; frontend may offer a resend option
+    }
 
-        const respData = { userId: user._id, email: user.email, emailSent };
+    const respData = { userId: user._id, email: user.email, emailSent };
 
-      return res.status(201).json(
+    return res
+      .status(201)
+      .json(
         new ApiResponse(
           201,
           respData,
@@ -108,11 +134,13 @@ const signup = asyncHandler(async (req, res) => {
         )
       );
   } catch (err) {
-    console.error('auth.signup unexpected error:', err && err.stack ? err.stack : err)
-    throw err
+    console.error(
+      "auth.signup unexpected error:",
+      err && err.stack ? err.stack : err
+    );
+    throw err;
   }
 });
-
 
 const verifyEmail = asyncHandler(async (req, res) => {
   const { token } = req.query;
@@ -138,9 +166,14 @@ const verifyEmail = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, null, "Email verified successfully! You can now log in."));
+    .json(
+      new ApiResponse(
+        200,
+        null,
+        "Email verified successfully! You can now log in."
+      )
+    );
 });
-
 
 const resendVerification = asyncHandler(async (req, res) => {
   const { email } = req.body;
@@ -157,36 +190,56 @@ const resendVerification = asyncHandler(async (req, res) => {
   try {
     // Generate a fresh 6-digit code and store its hash+expiry
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const hashed = crypto.createHash('sha256').update(code).digest('hex');
+    const hashed = crypto.createHash("sha256").update(code).digest("hex");
     user.emailVerificationCode = hashed;
-    user.emailVerificationExpires = Date.now() + (parseInt(process.env.EMAIL_VERIFICATION_EXPIRE_MS) || 15 * 60 * 1000);
+    user.emailVerificationExpires =
+      Date.now() +
+      (parseInt(process.env.EMAIL_VERIFICATION_EXPIRE_MS) || 15 * 60 * 1000);
     await user.save({ validateBeforeSave: false });
 
-    console.log('resendVerification: sending code — env:', {
+    console.log("resendVerification: sending code — env:", {
       BREVO: Boolean(process.env.BREVO_API_KEY),
       SENDER_EMAIL: process.env.SENDER_EMAIL,
-    })
-    console.log('resendVerification: invoking sendemail.sendVerificationEmail for', email)
+    });
+    console.log(
+      "resendVerification: invoking sendemail.sendVerificationEmail for",
+      email
+    );
 
     let emailSent = true;
     try {
-      await sendemail.sendVerificationEmail(email, user.name, code, { isCode: true });
+      await sendemail.sendVerificationEmail(email, user.name, code, {
+        isCode: true,
+      });
     } catch (e) {
       emailSent = false;
-      console.error('resendVerification: email send failed — error:', e && e.stack ? e.stack : e);
+      console.error(
+        "resendVerification: email send failed — error:",
+        e && e.stack ? e.stack : e
+      );
     }
 
     const respData = { emailSent };
 
     return res
       .status(200)
-      .json(new ApiResponse(200, respData, emailSent ? "Verification email resent." : "Could not send verification email."));
+      .json(
+        new ApiResponse(
+          200,
+          respData,
+          emailSent
+            ? "Verification email resent."
+            : "Could not send verification email."
+        )
+      );
   } catch (err) {
-    console.error('resendVerification: unexpected error', err && err.stack ? err.stack : err);
+    console.error(
+      "resendVerification: unexpected error",
+      err && err.stack ? err.stack : err
+    );
     throw err;
   }
 });
-
 
 // Forgot password — generate reset token and email the user
 const forgotPassword = asyncHandler(async (req, res) => {
@@ -207,14 +260,20 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, null, "Password reset email sent if the account exists."));
+    .json(
+      new ApiResponse(
+        200,
+        null,
+        "Password reset email sent if the account exists."
+      )
+    );
 });
-
 
 // Reset password using token
 const resetPassword = asyncHandler(async (req, res) => {
   const { token, newPassword } = req.body;
-  if (!token || !newPassword) throw new ApiError(400, "Token and new password are required.");
+  if (!token || !newPassword)
+    throw new ApiError(400, "Token and new password are required.");
 
   const hashed = crypto.createHash("sha256").update(token).digest("hex");
   const user = await User.findOne({
@@ -222,16 +281,24 @@ const resetPassword = asyncHandler(async (req, res) => {
     passwordResetExpires: { $gt: Date.now() },
   });
 
-  if (!user) throw new ApiError(400, "Invalid or expired password reset token.");
+  if (!user)
+    throw new ApiError(400, "Invalid or expired password reset token.");
 
   user.password = newPassword;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
   await user.save();
 
-  return res.status(200).json(new ApiResponse(200, null, "Password has been reset. You can now sign in."));
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        null,
+        "Password has been reset. You can now sign in."
+      )
+    );
 });
-
 
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -266,7 +333,6 @@ const login = asyncHandler(async (req, res) => {
   );
 });
 
-
 const logout = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
@@ -283,7 +349,6 @@ const logout = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "Logged out successfully."));
 });
 
-
 const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken =
     req.cookies?.refreshToken || req.body?.refreshToken;
@@ -294,7 +359,10 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
   let decoded;
   try {
-    decoded = tokenUtils.verifyToken(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+    decoded = tokenUtils.verifyToken(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
   } catch {
     throw new ApiError(401, "Invalid or expired refresh token.");
   }
@@ -306,11 +374,12 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
   const { accessToken, refreshToken } = await issueTokens(user, res);
 
-  return res.status(200).json(
-    new ApiResponse(200, { accessToken, refreshToken }, "Token refreshed.")
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { accessToken, refreshToken }, "Token refreshed.")
+    );
 });
-
 
 const getMe = asyncHandler(async (req, res) => {
   return res
