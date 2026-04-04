@@ -9,23 +9,38 @@ const MODEL_CANDIDATES = [
 ];
 
 const getModelCandidates = () => {
-  const configured = String(process.env.HEALTH_MODEL || process.env.GEMINI_MODEL || "gemini-2.0-flash").trim();
-  return [configured, ...MODEL_CANDIDATES.filter((name) => name !== configured)];
+  const configured = String(
+    process.env.HEALTH_MODEL || process.env.GEMINI_MODEL || "gemini-2.0-flash"
+  ).trim();
+  return [
+    configured,
+    ...MODEL_CANDIDATES.filter((name) => name !== configured),
+  ];
 };
 
 const getGeminiApiKey = () => {
   const key = String(
-    process.env.BOT_API_KEY || process.env.GUIDE_API_KEY || process.env.GEMINI_API_KEY || process.env.HEALTH_API || ""
+    process.env.BOT_API_KEY ||
+      process.env.GUIDE_API_KEY ||
+      process.env.GEMINI_API_KEY ||
+      process.env.HEALTH_API ||
+      ""
   ).trim();
   if (!key) {
-    throw new Error("BOT_API_KEY (or GUIDE_API_KEY / GEMINI_API_KEY) is missing in environment variables.");
+    throw new Error(
+      "BOT_API_KEY (or GUIDE_API_KEY / GEMINI_API_KEY) is missing in environment variables."
+    );
   }
   return key;
 };
 
 const isRateLimitError = (err) => {
   const message = String(err?.message || "").toLowerCase();
-  return message.includes("429") || message.includes("too many requests") || message.includes("quota");
+  return (
+    message.includes("429") ||
+    message.includes("too many requests") ||
+    message.includes("quota")
+  );
 };
 
 const extractRetrySeconds = (err) => {
@@ -55,11 +70,7 @@ const wrapGeminiError = (err, modelName) => {
 const MAX_WORDS = 15;
 
 const trimWords = (text = "", maxWords = MAX_WORDS) =>
-  String(text)
-    .trim()
-    .split(/\s+/)
-    .slice(0, maxWords)
-    .join(" ");
+  String(text).trim().split(/\s+/).slice(0, maxWords).join(" ");
 
 const buildPrompt = (payload) => {
   const {
@@ -151,13 +162,13 @@ const safeJsonParse = (rawText) => {
 const normalizePlan = (parsed) => {
   const normalizeList = (value, min = 2, max = 4) => {
     const list = Array.isArray(value)
-      ? value
-          .map((item) => trimWords(item, MAX_WORDS))
-          .filter(Boolean)
+      ? value.map((item) => trimWords(item, MAX_WORDS)).filter(Boolean)
       : [];
 
     if (list.length < min) {
-      throw new Error("Model returned insufficient items in one or more sections");
+      throw new Error(
+        "Model returned insufficient items in one or more sections"
+      );
     }
 
     return list.slice(0, max);
@@ -229,15 +240,16 @@ const generateGuideLiveSuggestion = async (payload) => {
     proteinGap,
   } = payload || {};
 
-  const historyBlock = Array.isArray(chatHistory) && chatHistory.length
-    ? chatHistory
-        .slice(-12)
-        .map((entry, index) => {
-          const role = entry?.role === "assistant" ? "Coach" : "User";
-          return `${index + 1}. ${role}: ${String(entry?.content || "").trim()}`;
-        })
-        .join("\n")
-    : "No previous messages in this chat.";
+  const historyBlock =
+    Array.isArray(chatHistory) && chatHistory.length
+      ? chatHistory
+          .slice(-12)
+          .map((entry, index) => {
+            const role = entry?.role === "assistant" ? "Coach" : "User";
+            return `${index + 1}. ${role}: ${String(entry?.content || "").trim()}`;
+          })
+          .join("\n")
+      : "No previous messages in this chat.";
 
   const client = new GoogleGenerativeAI(apiKey);
   const prompt = `You are FitCek's conversational AI health coach.
@@ -295,7 +307,9 @@ Instructions:
       const result = await model.generateContent(prompt);
       text = String(result?.response?.text?.() || "").trim();
       if (text) {
-        console.info(`[HEALTH_AI] Live suggestion model selected: ${modelName}`);
+        console.info(
+          `[HEALTH_AI] Live suggestion model selected: ${modelName}`
+        );
         break;
       }
     } catch (err) {
@@ -354,7 +368,9 @@ const generateRealtimeActionPlan = async (payload) => {
 
   if (!plan) {
     if (lastError?.statusCode) throw lastError;
-    throw new Error(lastError?.message || "Unable to generate action plan from model output");
+    throw new Error(
+      lastError?.message || "Unable to generate action plan from model output"
+    );
   }
 
   return plan;

@@ -1,13 +1,11 @@
 import jwt from "jsonwebtoken";
 
-
 const generateAccessToken = (userId) => {
   const expiresIn = process.env.ACCESS_TOKEN_EXPIRATION || "15m";
   return jwt.sign({ _id: userId }, process.env.ACCESS_TOKEN_SECRET, {
     expiresIn,
   });
 };
-
 
 const generateRefreshToken = (userId) => {
   const expiresIn = process.env.REFRESH_TOKEN_EXPIRATION || "7d";
@@ -16,9 +14,11 @@ const generateRefreshToken = (userId) => {
   });
 };
 
-
 const generateEmailVerifyToken = (userId) => {
-  const expiresIn = process.env.EMAIL_VERIFICATION_EXPIRE_TIME || process.env.EMAIL_VERIFY_EXPIRATION || "24h";
+  const expiresIn =
+    process.env.EMAIL_VERIFICATION_EXPIRE_TIME ||
+    process.env.EMAIL_VERIFY_EXPIRATION ||
+    "24h";
   // Prefer a dedicated EMAIL_VERIFY_SECRET; fall back to ACCESS_TOKEN_SECRET if absent
   let secret = process.env.EMAIL_VERIFY_SECRET;
   if (!secret) {
@@ -36,7 +36,6 @@ const generateEmailVerifyToken = (userId) => {
     expiresIn,
   });
 };
-
 
 const verifyToken = (token, secret) => {
   return jwt.verify(token, secret);
