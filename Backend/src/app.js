@@ -7,7 +7,6 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import { notFound, errorHandler } from "./middlewares/error.middleware.js";
 
-
 // ── Route imports ──────────────────────────────────────
 import authRoutes from "./routes/auth.route.js";
 import devRoutes from "./routes/dev.route.js";
@@ -16,7 +15,6 @@ import foodRoutes from "./routes/food.route.js";
 import dailyLogRoutes from "./routes/dailyLog.route.js";
 import weightLogRoutes from "./routes/weightLog.route.js";
 import insightRoutes from "./routes/insight.route.js";
-
 
 const app = express();
 
@@ -75,15 +73,21 @@ app.use(
   cors({
     origin: (origin, cb) => {
       // In development allow any origin to avoid preflight blocking for local dev
-      if (process.env.NODE_ENV !== "production") return cb(null, true)
+      if (process.env.NODE_ENV !== "production") return cb(null, true);
       // Allow requests with no origin (curl, mobile)
-      if (!origin) return cb(null, true)
-      const ok = isAllowedOrigin(origin)
-      return cb(ok ? null : new Error(`Not allowed by CORS: ${origin}`), ok)
+      if (!origin) return cb(null, true);
+      const ok = isAllowedOrigin(origin);
+      return cb(ok ? null : new Error(`Not allowed by CORS: ${origin}`), ok);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Origin","Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    allowedHeaders: [
+      "Origin",
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+    ],
     preflightContinue: false,
     optionsSuccessStatus: 204,
   })
@@ -100,15 +104,20 @@ const globalLimiter = rateLimit({
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: "Too many requests. Please try again later." },
+  message: {
+    success: false,
+    message: "Too many requests. Please try again later.",
+  },
 });
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  message: { success: false, message: "Too many auth attempts. Please wait 15 minutes." },
+  message: {
+    success: false,
+    message: "Too many auth attempts. Please wait 15 minutes.",
+  },
 });
-
 
 // ── Body / cookie parsers ──────────────────────────────
 app.use(express.json({ limit: "16kb" }));

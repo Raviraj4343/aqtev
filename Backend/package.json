@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "seed:foods": "node src/scripts/seedFoods.js"
+    "seed:foods": "node src/scripts/seedFoods.js",
+    "ci:install": "npm ci --prefer-offline --no-audit --no-fund",
+    "lint:check": "npx prettier --check \"src/**/*.js\"",
+    "lint:ci": "npm run ci:install && npm run lint:check",
+    "format": "npx prettier --write \"src/**/*.js\""
   },
   "keywords": [],
   "author": "",

@@ -17,7 +17,9 @@ if (!socketCorsOrigins.includes("https://fitcek.vercel.app")) {
 const initSocket = (httpServer) => {
   const io = new Server(httpServer, {
     cors: {
-      origin: socketCorsOrigins.length ? socketCorsOrigins : ["http://localhost:3000"],
+      origin: socketCorsOrigins.length
+        ? socketCorsOrigins
+        : ["http://localhost:3000"],
       methods: ["GET", "POST"],
       credentials: true,
     },
@@ -35,7 +37,10 @@ const initSocket = (httpServer) => {
         return next(new Error("Authentication token required"));
       }
 
-      const decoded = tokenUtils.verifyToken(token, process.env.ACCESS_TOKEN_SECRET);
+      const decoded = tokenUtils.verifyToken(
+        token,
+        process.env.ACCESS_TOKEN_SECRET
+      );
       const user = await User.findById(decoded._id).select("name email");
       if (!user) return next(new Error("User not found"));
 
@@ -87,7 +92,9 @@ const initSocket = (httpServer) => {
     async () => {
       console.log("⏰ Running Sunday weight reminder...");
       try {
-        const users = await User.find({ profileCompleted: true }).select("_id name");
+        const users = await User.find({ profileCompleted: true }).select(
+          "_id name"
+        );
         users.forEach((user) => {
           const socketId = connectedUsers.get(user._id.toString());
           if (socketId) {
