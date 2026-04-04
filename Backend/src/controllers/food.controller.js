@@ -7,10 +7,7 @@ import ApiError from "../utils/ApiError.js";
 const escapeRegex = (text = "") => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const normalizeTerm = (text = "") => String(text).toLowerCase().trim();
 const tokenizeTerm = (text = "") =>
-  normalizeTerm(text)
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 8);
+  normalizeTerm(text).split(/\s+/).filter(Boolean).slice(0, 8);
 const CACHE_TTL_MS = 2 * 60 * 1000;
 const responseCache = new Map();
 
@@ -35,17 +32,23 @@ const setCache = (key, value) => {
 };
 
 const scoreSearchMatch = (item = {}, normalizedTerm = "", tokens = []) => {
-  const searchText = `${normalizeTerm(item?.name)} ${normalizeTerm(item?.nameHindi)}`.trim();
+  const searchText =
+    `${normalizeTerm(item?.name)} ${normalizeTerm(item?.nameHindi)}`.trim();
   if (!searchText) return 0;
 
-  const hasAllTokens = tokens.length > 0 && tokens.every((token) => searchText.includes(token));
+  const hasAllTokens =
+    tokens.length > 0 && tokens.every((token) => searchText.includes(token));
   if (!hasAllTokens) return 0;
 
-  let score = tokens.reduce((sum, token) => sum + (searchText.includes(token) ? 12 : 0), 0);
+  let score = tokens.reduce(
+    (sum, token) => sum + (searchText.includes(token) ? 12 : 0),
+    0
+  );
 
   if (normalizedTerm && searchText.includes(normalizedTerm)) score += 40;
   if (normalizedTerm && searchText.startsWith(normalizedTerm)) score += 25;
-  if (normalizedTerm && normalizeTerm(item?.name) === normalizedTerm) score += 50;
+  if (normalizedTerm && normalizeTerm(item?.name) === normalizedTerm)
+    score += 50;
 
   return score;
 };
@@ -56,11 +59,16 @@ const rankAndTrimFoods = (foods = [], term = "", limit = 10) => {
   const maxItems = Math.max(1, Number(limit) || 10);
 
   return [...foods]
-    .map((item) => ({ item, score: scoreSearchMatch(item, normalizedTerm, tokens) }))
+    .map((item) => ({
+      item,
+      score: scoreSearchMatch(item, normalizedTerm, tokens),
+    }))
     .filter((entry) => entry.score > 0)
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
-      return String(a.item?.name || "").localeCompare(String(b.item?.name || ""));
+      return String(a.item?.name || "").localeCompare(
+        String(b.item?.name || "")
+      );
     })
     .slice(0, maxItems)
     .map((entry) => entry.item);
@@ -101,17 +109,18 @@ const filterStaticFoods = ({ diet, category, q, limit }) => {
   }
 
   if (term) {
-    const matched = STATIC_SEARCH_INDEX
-      .filter((entry) => tokens.every((token) => entry.searchText.includes(token)))
-      .map((entry) => entry.item);
+    const matched = STATIC_SEARCH_INDEX.filter((entry) =>
+      tokens.every((token) => entry.searchText.includes(token))
+    ).map((entry) => entry.item);
 
     const categoryFiltered = category
       ? matched.filter((item) => item.category === category)
       : matched;
 
-    items = diet === "veg"
-      ? categoryFiltered.filter((item) => item.dietType === "veg")
-      : categoryFiltered;
+    items =
+      diet === "veg"
+        ? categoryFiltered.filter((item) => item.dietType === "veg")
+        : categoryFiltered;
   }
 
   if (term) {
@@ -161,13 +170,13 @@ const dedupeFoodsByName = (foods = []) => {
   return unique;
 };
 
-
 const getAllFoods = asyncHandler(async (req, res) => {
   const { diet, category } = req.query;
   const parsedLimit = Number(req.query.limit);
-  const limit = Number.isFinite(parsedLimit) && parsedLimit > 0
-    ? Math.min(2000, parsedLimit)
-    : 120;
+  const limit =
+    Number.isFinite(parsedLimit) && parsedLimit > 0
+      ? Math.min(2000, parsedLimit)
+      : 120;
   const cacheKey = `all:${diet || "all"}:${category || "all"}:${limit}`;
   const cached = getCache(cacheKey);
 
@@ -215,7 +224,6 @@ const getAllFoods = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, foods, "Foods fetched successfully."));
 });
-
 
 const searchFoods = asyncHandler(async (req, res) => {
   const { q } = req.query;
@@ -270,11 +278,8 @@ const searchFoods = asyncHandler(async (req, res) => {
   setCache(cacheKey, foods);
   res.set("Cache-Control", "public, max-age=120");
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, foods, "Search results."));
+  return res.status(200).json(new ApiResponse(200, foods, "Search results."));
 });
-
 
 const getFoodById = asyncHandler(async (req, res) => {
   const food = await Food.findById(req.params.id);
@@ -284,7 +289,6 @@ const getFoodById = asyncHandler(async (req, res) => {
 
   return res.status(200).json(new ApiResponse(200, food, "Food item fetched."));
 });
-
 
 const getCategories = asyncHandler(async (req, res) => {
   const cacheKey = "categories";
@@ -345,7 +349,12 @@ const getBoostFoods = asyncHandler(async (req, res) => {
   }
 
   let foods = await Food.find(filter)
-    .sort({ [rule.sortBy]: -1, proteinPerUnit: -1, fiberPerUnit: -1, caloriesPerUnit: -1 })
+    .sort({
+      [rule.sortBy]: -1,
+      proteinPerUnit: -1,
+      fiberPerUnit: -1,
+      caloriesPerUnit: -1,
+    })
     .limit(limit * 3)
     .lean()
     .select(
@@ -355,8 +364,13 @@ const getBoostFoods = asyncHandler(async (req, res) => {
   if (!foods.length) {
     foods = filterStaticFoods({ diet })
       .filter((item) => Number(item?.[rule.minField] || 0) >= rule.minValue)
-      .filter((item) => !rule.excludeCategory || item.category !== rule.excludeCategory)
-      .sort((a, b) => Number(b?.[rule.sortBy] || 0) - Number(a?.[rule.sortBy] || 0))
+      .filter(
+        (item) =>
+          !rule.excludeCategory || item.category !== rule.excludeCategory
+      )
+      .sort(
+        (a, b) => Number(b?.[rule.sortBy] || 0) - Number(a?.[rule.sortBy] || 0)
+      )
       .slice(0, limit * 3);
   }
 
