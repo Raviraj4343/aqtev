@@ -9,7 +9,10 @@ import {
   computeHealthReport,
 } from "../utils/HealthCalculation.js";
 import DailyLog from "../models/dailylog.model.js";
-import { generateRealtimeActionPlan, generateGuideLiveSuggestion } from "../utils/healthActionPlanAI.js";
+import {
+  generateRealtimeActionPlan,
+  generateGuideLiveSuggestion,
+} from "../utils/healthActionPlanAI.js";
 
 const getTodayIST = () =>
   new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -141,7 +144,6 @@ const buildDerivedActionPlan = ({
   };
 };
 
-
 const getTodayInsight = asyncHandler(async (req, res) => {
   const user = req.user;
 
@@ -150,10 +152,11 @@ const getTodayInsight = asyncHandler(async (req, res) => {
   }
 
   // ── 1. Compute requirements ──
-  const { bmi, category: bmiCategory, message: bmiMessage } = calculateBMI(
-    user.weightKg,
-    user.heightCm
-  );
+  const {
+    bmi,
+    category: bmiCategory,
+    message: bmiMessage,
+  } = calculateBMI(user.weightKg, user.heightCm);
   const requiredCalories = calculateDailyCalories(user);
   const requiredProtein = calculateDailyProtein(user.weightKg, user.goal);
 
@@ -199,9 +202,10 @@ const getTodayInsight = asyncHandler(async (req, res) => {
     healthReport: report,
   };
 
-  return res.status(200).json(new ApiResponse(200, response, "Today's insights generated."));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, response, "Today's insights generated."));
 });
-
 
 const getWeeklySummary = asyncHandler(async (req, res) => {
   const user = req.user;
@@ -222,20 +226,32 @@ const getWeeklySummary = asyncHandler(async (req, res) => {
   if (logs.length === 0) {
     return res
       .status(200)
-      .json(new ApiResponse(200, { message: "No logs found for this period." }, "No data."));
+      .json(
+        new ApiResponse(
+          200,
+          { message: "No logs found for this period." },
+          "No data."
+        )
+      );
   }
 
   const requiredCalories = calculateDailyCalories(user);
   const requiredProtein = calculateDailyProtein(user.weightKg, user.goal);
 
-  const totalCalories = logs.reduce((sum, l) => sum + (l.totalCalories || 0), 0);
+  const totalCalories = logs.reduce(
+    (sum, l) => sum + (l.totalCalories || 0),
+    0
+  );
   const totalProtein = logs.reduce((sum, l) => sum + (l.totalProtein || 0), 0);
-  const totalSleep = logs.filter((l) => l.sleepHours != null).reduce((sum, l) => sum + l.sleepHours, 0);
+  const totalSleep = logs
+    .filter((l) => l.sleepHours != null)
+    .reduce((sum, l) => sum + l.sleepHours, 0);
   const sleepCount = logs.filter((l) => l.sleepHours != null).length;
 
   const avgCalories = Math.round(totalCalories / logs.length);
   const avgProtein = parseFloat((totalProtein / logs.length).toFixed(1));
-  const avgSleep = sleepCount > 0 ? parseFloat((totalSleep / sleepCount).toFixed(1)) : null;
+  const avgSleep =
+    sleepCount > 0 ? parseFloat((totalSleep / sleepCount).toFixed(1)) : null;
 
   const calorieDiff = avgCalories - requiredCalories;
   const proteinDiff = avgProtein - requiredProtein;
@@ -256,7 +272,13 @@ const getWeeklySummary = asyncHandler(async (req, res) => {
       calories: calorieDiff,
       protein: proteinDiff,
     },
-    overallScore: computeHealthScore({ avgCalories, requiredCalories, avgProtein, requiredProtein, avgSleep }),
+    overallScore: computeHealthScore({
+      avgCalories,
+      requiredCalories,
+      avgProtein,
+      requiredProtein,
+      avgSleep,
+    }),
   };
 
   return res
@@ -280,8 +302,14 @@ const getActionPlan = asyncHandler(async (req, res) => {
     waterIntake: log?.waterIntake ?? null,
   };
 
-  const { bmi, category: bmiCategory } = calculateBMI(user.weightKg, user.heightCm);
-  const requiredCalories = calculateDailyCalories({ ...user.toObject(), goal: activeGoal });
+  const { bmi, category: bmiCategory } = calculateBMI(
+    user.weightKg,
+    user.heightCm
+  );
+  const requiredCalories = calculateDailyCalories({
+    ...user.toObject(),
+    goal: activeGoal,
+  });
   const requiredProtein = calculateDailyProtein(user.weightKg, activeGoal);
   const calorieGap = Math.max(0, requiredCalories - totals.totalCalories);
   const proteinGap = Math.max(0, requiredProtein - totals.totalProtein);
@@ -378,8 +406,14 @@ const getLiveSuggestion = asyncHandler(async (req, res) => {
     waterIntake: log?.waterIntake ?? null,
   };
 
-  const { bmi, category: bmiCategory } = calculateBMI(user.weightKg, user.heightCm);
-  const requiredCalories = calculateDailyCalories({ ...user.toObject(), goal: activeGoal });
+  const { bmi, category: bmiCategory } = calculateBMI(
+    user.weightKg,
+    user.heightCm
+  );
+  const requiredCalories = calculateDailyCalories({
+    ...user.toObject(),
+    goal: activeGoal,
+  });
   const requiredProtein = calculateDailyProtein(user.weightKg, activeGoal);
   const calorieGap = Math.max(0, requiredCalories - totals.totalCalories);
   const proteinGap = Math.max(0, requiredProtein - totals.totalProtein);
@@ -411,7 +445,10 @@ const getLiveSuggestion = asyncHandler(async (req, res) => {
     });
   } catch (err) {
     if (Number(err?.statusCode) === 429) {
-      throw new ApiError(429, err?.message || "Gemini quota limit reached. Please retry shortly.");
+      throw new ApiError(
+        429,
+        err?.message || "Gemini quota limit reached. Please retry shortly."
+      );
     }
     throw new ApiError(
       502,
@@ -434,8 +471,13 @@ const getLiveSuggestion = asyncHandler(async (req, res) => {
   );
 });
 
-
-const computeHealthScore = ({ avgCalories, requiredCalories, avgProtein, requiredProtein, avgSleep }) => {
+const computeHealthScore = ({
+  avgCalories,
+  requiredCalories,
+  avgProtein,
+  requiredProtein,
+  avgSleep,
+}) => {
   let score = 100;
 
   const caloriePct = (avgCalories / requiredCalories) * 100;
