@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Card from '../components/ui/Card'
 import FoodSearch from '../components/FoodSearch'
 import { useLanguage } from '../contexts/LanguageContext'
+import { formatUnit } from '../utils/units'
 
 const MEAL_OPTIONS = ['breakfast', 'lunch', 'dinner', 'snacks']
 
@@ -170,7 +171,7 @@ export default function GuestNutritionCheck(){
               <div>
                 <strong>{pendingFood.name}</strong>
                 <span>
-                  {pendingFood.caloriesPerUnit} kcal • {pendingFood.proteinPerUnit || 0} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'} • {isHindi ? 'प्रति' : 'per'} {pendingFood.unit || 'serving'}
+                  {pendingFood.caloriesPerUnit} kcal • {pendingFood.proteinPerUnit || 0} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'} • {isHindi ? 'प्रति' : 'per'} {formatUnit(pendingFood.unit) || 'serving'}
                 </span>
               </div>
               <div className="guest-pending-actions">

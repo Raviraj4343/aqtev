@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Input from './ui/Input'
 import * as api from '../utils/api'
 import { useLanguage } from '../contexts/LanguageContext'
+import { formatUnit } from '../utils/units'
 
 const EMPTY_FOODS = []
 
@@ -117,7 +118,7 @@ export default function FoodSearch({ onSelect, placeholder = 'Search foods...', 
               r.nameHindi,
               `${r.caloriesPerUnit} kcal`,
               `${r.proteinPerUnit} g protein`,
-              r.unit,
+              formatUnit(r.unit),
             ].filter(Boolean).join(' • ')
 
             return (

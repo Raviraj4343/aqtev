@@ -3,6 +3,7 @@ import Input from './ui/Input'
 import Button from './ui/Button'
 import FoodSearch from './FoodSearch'
 import { useLanguage } from '../contexts/LanguageContext'
+import { formatUnit } from '../utils/units'
 
 const WATER_OPTIONS = ['', '<1L', '1-2L', '2-3L', '3L+']
 const MEAL_OPTIONS = ['breakfast', 'lunch', 'dinner', 'snacks']
@@ -129,7 +130,7 @@ export default function DailyLogEditor({
             <div className="meal-add-copy">
               <strong>{pendingFood.name}</strong>
               <span>
-                {pendingFood.caloriesPerUnit} kcal • {pendingFood.proteinPerUnit || 0} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'} • {isHindi ? 'प्रति' : 'per'} {pendingFood.unit || 'serving'}
+                {pendingFood.caloriesPerUnit} kcal • {pendingFood.proteinPerUnit || 0} {isHindi ? 'ग्राम प्रोटीन' : 'g protein'} • {isHindi ? 'प्रति' : 'per'} {formatUnit(pendingFood.unit) || 'serving'}
               </span>
             </div>
             <div className="meal-add-controls">

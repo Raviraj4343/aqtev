@@ -3,6 +3,7 @@ import Card from '../components/ui/Card'
 import FoodSearch from '../components/FoodSearch'
 import * as api from '../utils/api'
 import { useLanguage } from '../contexts/LanguageContext'
+import { formatUnit } from '../utils/units'
 
 const formatCategory = (value) => String(value || 'General').replace(/_/g, ' ')
 const formatDiet = (value) => String(value || 'Mixed').replace(/_/g, ' ')
@@ -87,27 +88,27 @@ export default function Foods(){
               {selected.nameHindi ? <p className="muted">{selected.nameHindi}</p> : null}
               <div className="food-detail-grid">
                 <div className="feature-list-row">
-                  <div><strong>{isHindi ? 'कैलोरी' : 'Calories'}</strong><span>{isHindi ? 'प्रति' : 'Per'} {selected.unit}</span></div>
+                  <div><strong>{isHindi ? 'कैलोरी' : 'Calories'}</strong><span>{isHindi ? 'प्रति' : 'Per'} {formatUnit(selected.unit)}</span></div>
                   <div className="feature-list-metric">{selected.caloriesPerUnit} kcal</div>
                 </div>
                 <div className="feature-list-row">
-                  <div><strong>{isHindi ? 'प्रोटीन' : 'Protein'}</strong><span>{isHindi ? 'प्रति' : 'Per'} {selected.unit}</span></div>
+                  <div><strong>{isHindi ? 'प्रोटीन' : 'Protein'}</strong><span>{isHindi ? 'प्रति' : 'Per'} {formatUnit(selected.unit)}</span></div>
                   <div className="feature-list-metric">{selected.proteinPerUnit} g</div>
                 </div>
                 <div className="feature-list-row">
-                  <div><strong>{isHindi ? 'कार्ब्स' : 'Carbs'}</strong><span>{isHindi ? 'प्रति' : 'Per'} {selected.unit}</span></div>
+                  <div><strong>{isHindi ? 'कार्ब्स' : 'Carbs'}</strong><span>{isHindi ? 'प्रति' : 'Per'} {formatUnit(selected.unit)}</span></div>
                   <div className="feature-list-metric">{selected.carbsPerUnit || 0} g</div>
                 </div>
                 <div className="feature-list-row">
-                  <div><strong>{isHindi ? 'फैट्स' : 'Fats'}</strong><span>{isHindi ? 'प्रति' : 'Per'} {selected.unit}</span></div>
+                  <div><strong>{isHindi ? 'फैट्स' : 'Fats'}</strong><span>{isHindi ? 'प्रति' : 'Per'} {formatUnit(selected.unit)}</span></div>
                   <div className="feature-list-metric">{selected.fatsPerUnit || 0} g</div>
                 </div>
                 <div className="feature-list-row">
-                  <div><strong>{isHindi ? 'फाइबर' : 'Fiber'}</strong><span>{isHindi ? 'प्रति' : 'Per'} {selected.unit}</span></div>
+                  <div><strong>{isHindi ? 'फाइबर' : 'Fiber'}</strong><span>{isHindi ? 'प्रति' : 'Per'} {formatUnit(selected.unit)}</span></div>
                   <div className="feature-list-metric">{selected.fiberPerUnit || 0} g</div>
                 </div>
                 <div className="feature-list-row">
-                  <div><strong>{isHindi ? 'कैल्शियम' : 'Calcium'}</strong><span>{isHindi ? 'प्रति' : 'Per'} {selected.unit}</span></div>
+                  <div><strong>{isHindi ? 'कैल्शियम' : 'Calcium'}</strong><span>{isHindi ? 'प्रति' : 'Per'} {formatUnit(selected.unit)}</span></div>
                   <div className="feature-list-metric">{selected.calciumPerUnit || 0} mg</div>
                 </div>
                 <div className="feature-list-row">
