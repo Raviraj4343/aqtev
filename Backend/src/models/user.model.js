@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 import {
   ACTIVITY_LEVELS,
   GOALS,
@@ -112,7 +112,8 @@ const userSchema = new mongoose.Schema(
 // Use async pre hook without calling `next()` — return a Promise instead.
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
-  this.password = await bcrypt.hash(this.password, 12);
+  const rounds = Number(process.env.BCRYPT_SALT_ROUNDS) || 12;
+  this.password = await bcrypt.hash(this.password, rounds);
 });
 
 // ── Compare password ──
