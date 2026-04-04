@@ -3,7 +3,6 @@ import asyncHandler from "../utils/AsyncHandler.js";
 import tokenUtils from "../utils/gererateToken.js";
 import User from "../models/user.model.js";
 
-
 const protect = asyncHandler(async (req, _res, next) => {
   let token;
 
@@ -39,14 +38,12 @@ const protect = asyncHandler(async (req, _res, next) => {
   next();
 });
 
-
 const requireEmailVerified = asyncHandler(async (req, _res, next) => {
   if (!req.user.isEmailVerified) {
     throw new ApiError(403, "Please verify your email address first.");
   }
   next();
 });
-
 
 const requireProfileComplete = asyncHandler(async (req, _res, next) => {
   if (!req.user.profileCompleted) {
