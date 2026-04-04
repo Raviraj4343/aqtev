@@ -10,6 +10,8 @@ const mealItemSchema = new mongoose.Schema(
     },
     foodName: { type: String, required: true },
     quantity: { type: Number, required: true, min: 0.1 },
+    unit: { type: String },
+    servingGrams: { type: Number },
     caloriesPerUnit: { type: Number, required: true },
     proteinPerUnit: { type: Number, required: true },
     carbsPerUnit: { type: Number, default: 0 },
@@ -27,12 +29,47 @@ const mealItemSchema = new mongoose.Schema(
 );
 
 mealItemSchema.pre("save", function () {
-  this.totalCalories = parseFloat(
-    (this.caloriesPerUnit * this.quantity).toFixed(2)
-  );
-  this.totalProtein = parseFloat(
-    (this.proteinPerUnit * this.quantity).toFixed(2)
-  );
+  const parseUnitToGrams = (unit) => {
+    if (!unit) return null;
+    const u = String(unit).toLowerCase().trim();
+    const gMatch = u.match(/(\d+)\s*g/);
+    if (gMatch) return Number(gMatch[1]);
+    const mlMatch = u.match(/(\d+)\s*ml/);
+    if (mlMatch) return Number(mlMatch[1]);
+    if (u.includes("bowl")) return 200;
+    if (u.includes("cup")) return 240;
+    if (u.includes("glass")) return 240;
+    if (u.includes("tbsp")) return 15;
+    return null;
+  };
+
+  const unitBase = parseUnitToGrams(this.unit);
+
+  // If explicit servingGrams provided, use it (most accurate)
+  if (this.servingGrams && unitBase) {
+    const perGramCal = (this.caloriesPerUnit || 0) / unitBase;
+    const perGramProt = (this.proteinPerUnit || 0) / unitBase;
+    this.totalCalories = parseFloat(
+      (perGramCal * this.servingGrams).toFixed(2)
+    );
+    this.totalProtein = parseFloat(
+      (perGramProt * this.servingGrams).toFixed(2)
+    );
+  } else if (unitBase && this.quantity && this.quantity >= 10) {
+    // treat quantity as grams when quantity >= 10 and unitBase exists
+    const perGramCal = (this.caloriesPerUnit || 0) / unitBase;
+    const perGramProt = (this.proteinPerUnit || 0) / unitBase;
+    this.totalCalories = parseFloat((perGramCal * this.quantity).toFixed(2));
+    this.totalProtein = parseFloat((perGramProt * this.quantity).toFixed(2));
+  } else {
+    this.totalCalories = parseFloat(
+      (this.caloriesPerUnit * this.quantity).toFixed(2)
+    );
+    this.totalProtein = parseFloat(
+      (this.proteinPerUnit * this.quantity).toFixed(2)
+    );
+  }
+
   this.totalCarbs = parseFloat((this.carbsPerUnit * this.quantity).toFixed(2));
   this.totalFats = parseFloat((this.fatsPerUnit * this.quantity).toFixed(2));
   this.totalFiber = parseFloat((this.fiberPerUnit * this.quantity).toFixed(2));
@@ -122,8 +159,39 @@ dailyLogSchema.pre("save", function () {
 
   this.meals.forEach((mealGroup) => {
     mealGroup.items.forEach((item) => {
-      const cal = (item.caloriesPerUnit || 0) * (item.quantity || 1);
-      const prot = (item.proteinPerUnit || 0) * (item.quantity || 1);
+      const parseUnitToGrams = (unit) => {
+        if (!unit) return null;
+        const u = String(unit).toLowerCase().trim();
+        const gMatch = u.match(/(\d+)\s*g/);
+        if (gMatch) return Number(gMatch[1]);
+        const mlMatch = u.match(/(\d+)\s*ml/);
+        if (mlMatch) return Number(mlMatch[1]);
+        if (u.includes("bowl")) return 200;
+        if (u.includes("cup")) return 240;
+        if (u.includes("glass")) return 240;
+        if (u.includes("tbsp")) return 15;
+        return null;
+      };
+
+      const unitBase = parseUnitToGrams(item.unit);
+
+      let cal = 0;
+      let prot = 0;
+      if (item.servingGrams && unitBase) {
+        const perGramCal = (item.caloriesPerUnit || 0) / unitBase;
+        const perGramProt = (item.proteinPerUnit || 0) / unitBase;
+        cal = perGramCal * item.servingGrams;
+        prot = perGramProt * item.servingGrams;
+      } else if (unitBase && item.quantity && item.quantity >= 10) {
+        const perGramCal = (item.caloriesPerUnit || 0) / unitBase;
+        const perGramProt = (item.proteinPerUnit || 0) / unitBase;
+        cal = perGramCal * item.quantity;
+        prot = perGramProt * item.quantity;
+      } else {
+        cal = (item.caloriesPerUnit || 0) * (item.quantity || 1);
+        prot = (item.proteinPerUnit || 0) * (item.quantity || 1);
+      }
+
       const carbs = (item.carbsPerUnit || 0) * (item.quantity || 1);
       const fats = (item.fatsPerUnit || 0) * (item.quantity || 1);
       const fiber = (item.fiberPerUnit || 0) * (item.quantity || 1);
