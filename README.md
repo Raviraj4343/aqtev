@@ -1,8 +1,28 @@
 # 🏋️ FitCek – Smart Health Tracking Platform
 
+---
+![Frontend](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react&logoColor=white)
+![Build Tool](https://img.shields.io/badge/Build-Vite-646CFF?logo=vite&logoColor=white)
+![Backend](https://img.shields.io/badge/Backend-Node.js-339933?logo=node.js&logoColor=white)
+![Framework](https://img.shields.io/badge/Framework-Express-000000?logo=express&logoColor=white)
+![Database](https://img.shields.io/badge/Database-MongoDB-47A248?logo=mongodb&logoColor=white)
+![Media](https://img.shields.io/badge/Media-Cloudinary-3448C5?logo=cloudinary&logoColor=white)
+![ODM](https://img.shields.io/badge/ODM-Mongoose-880000?logo=mongoose&logoColor=white)
+![Realtime](https://img.shields.io/badge/Realtime-Socket.IO-010101?logo=socket.io&logoColor=white)
+![Auth](https://img.shields.io/badge/Auth-JWT-000000?logo=jsonwebtokens&logoColor=white)
+![AI](https://img.shields.io/badge/AI-Google_Gemini-4285F4?logo=google&logoColor=white)
+![Email](https://img.shields.io/badge/Email-Brevo-0B996E?logo=mailboxdotorg&logoColor=white)
+![Mobile](https://img.shields.io/badge/Mobile-Capacitor-119EFF?logo=capacitor&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
+![Deployment](https://img.shields.io/badge/Frontend-Vercel-000000?logo=vercel&logoColor=white)
+![Backend Hosting](https://img.shields.io/badge/Backend-Render-46E3B7?logo=render&logoColor=white)
+
+---
+
 FitCek is a full-stack health tracking application that helps users monitor daily nutrition, weight, and lifestyle habits with AI-powered insights and personalized recommendations.
 
 It provides real-time tracking, intelligent suggestions, and a clean user experience designed for long-term health improvement.
+
 
 ---
 
@@ -10,6 +30,34 @@ It provides real-time tracking, intelligent suggestions, and a clean user experi
 
 * 🔗 Frontend: https://fitcek.vercel.com
 * 🔗 Backend: https://fitcek.onrender.com
+---
+<p align="center">
+  <img src="https://img.shields.io/badge/FitCek-Health%20Tracker-blueviolet?style=for-the-badge"/>
+</p>
+## 🚀 Download FitCek App
+
+<p align="center">
+  <a href="https://github.com/Raviraj4343/fitcek/releases/download/v1.0/FitCek-v1.0.apk">
+    <img src="https://img.shields.io/badge/⬇%20Download%20APK-FitCek-3DDC84?style=for-the-badge&logo=android&logoColor=white"/>
+  </a>
+</p>
+
+<p align="center">
+  📦 Version: <b>v1.0</b> &nbsp; | &nbsp; 📱 Platform: <b>Android</b> &nbsp; | &nbsp; ⚡ Size: <b>~5MB</b>
+</p>
+
+---
+
+### ✨ Why Download?
+
+- 🥗 Smart meal tracking  
+- 📊 Health insights dashboard  
+- 🤖 AI-powered assistance  
+- ⚡ Fast & lightweight experience  
+
+---
+
+> ⚠️ Enable <b>Install from Unknown Sources</b> before installing.
 
 
 ---
@@ -174,15 +222,45 @@ This project was built to solve real-world health tracking problems by combining
 
 ## 📸 Screenshots
 
-<img width="1276" height="857" alt="image" src="https://github.com/user-attachments/assets/6b008519-6046-4dbe-a374-65419e6356ac" />
-<img width="1203" height="864" alt="image" src="https://github.com/user-attachments/assets/d12534e0-1035-44a9-ab77-427c7883b755" />
-
-<img width="1196" height="866" alt="image" src="https://github.com/user-attachments/assets/1d78ac66-7842-44e3-a3da-d9363b7ab600" />
-
+---
+---
+<img width="1353" height="872" alt="image" src="https://github.com/user-attachments/assets/c014191b-df78-4c2d-9aa1-2b48c5863d53" />
+---
+<img width="1260" height="878" alt="image" src="https://github.com/user-attachments/assets/c2eb3a3e-cb00-4e2b-8673-aa31034f5a93" />
+---
+<img width="1242" height="802" alt="image" src="https://github.com/user-attachments/assets/69752e75-7c23-4efb-af21-73f079423dfc" />
+---
+<img width="1251" height="793" alt="image" src="https://github.com/user-attachments/assets/bb81087b-55d7-40b9-b27a-7b3eaa84d1e0" />
+---
+<img width="1232" height="616" alt="image" src="https://github.com/user-attachments/assets/c860a80d-d0a7-4789-8198-ce667f0321fa" />
 
 
 ---
+---
+
+## 👨‍💻 Author
+
+<p align="center">
+  <b>Ravi Raj</b><br><br>
+
+  <a href="https://www.linkedin.com/in/ravi-r-318b55247/">
+    <img src="https://img.shields.io/badge/LinkedIn-Ravi%20Raj-blue?style=for-the-badge&logo=linkedin"/>
+  </a>
+
+  <a href="https://github.com/Raviraj4343">
+    <img src="https://img.shields.io/badge/GitHub-RaviRaj-black?style=for-the-badge&logo=github"/>
+  </a>
+
+  <a href="mailto:raviraj06112005@gmail.com">
+    <img src="https://img.shields.io/badge/Email-Contact-red?style=for-the-badge&logo=gmail"/>
+  </a>
+</p>
+
 
 ## 📄 License
 
 ISC
+
+<p align="center">
+  Built with ❤️ by <b>Ravi Raj</b>
+</p>
