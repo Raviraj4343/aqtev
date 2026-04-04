@@ -9,7 +9,8 @@ export const connectDB = async () => {
     return;
   }
   try {
-    const baseUri = process.env.MONGODB_URL || MONGODB_URI || "mongodb://127.0.0.1:27017";
+    const baseUri =
+      process.env.MONGODB_URL || MONGODB_URI || "mongodb://127.0.0.1:27017";
     let uri = baseUri.replace(/\/$/, "");
 
     // If the URI does not already include a database path, append DB_NAME
@@ -22,7 +23,9 @@ export const connectDB = async () => {
     const connectionInstance = await mongoose.connect(uri);
 
     isConnected = true;
-    console.log(`\n✅ MongoDB connected! Host: ${connectionInstance.connection.host}\n`);
+    console.log(
+      `\n✅ MongoDB connected! Host: ${connectionInstance.connection.host}\n`
+    );
 
     mongoose.connection.on("error", (err) => {
       console.error("MongoDB connection error:", err);

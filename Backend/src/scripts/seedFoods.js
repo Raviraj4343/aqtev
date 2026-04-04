@@ -80,7 +80,9 @@ const seed = async () => {
 
     const { uniqueFoods, skippedCount } = dedupeFoodsByName(sanitized);
     if (skippedCount > 0) {
-      console.log(`Skipped ${skippedCount} duplicate food names from source data.`);
+      console.log(
+        `Skipped ${skippedCount} duplicate food names from source data.`
+      );
     }
 
     const inserted = await FoodModel.insertMany(uniqueFoods);
