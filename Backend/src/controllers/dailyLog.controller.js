@@ -6,19 +6,18 @@ import Food from "../models/food.model.js";
 import FoodData from "../data/foods.js";
 import { MEAL_TYPES } from "../constants.js";
 
-
 const getTodayIST = () => {
-  return new Date()
-    .toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }); // "YYYY-MM-DD"
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }); // "YYYY-MM-DD"
 };
 
-const normalizeTerm = (value = "") => String(value || "").trim().toLowerCase();
-const escapeRegex = (value = "") => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const normalizeTerm = (value = "") =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+const escapeRegex = (value = "") =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const tokenize = (value = "") =>
-  normalizeTerm(value)
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 8);
+  normalizeTerm(value).split(/\s+/).filter(Boolean).slice(0, 8);
 
 const resolveFoodForMealItem = async (item = {}) => {
   if (item.foodId) {
@@ -31,7 +30,10 @@ const resolveFoodForMealItem = async (item = {}) => {
   const tokens = tokenize(requestedName);
 
   const exactNameRegex = new RegExp(`^${escapeRegex(requestedName)}$`, "i");
-  const byName = await Food.findOne({ isActive: true, $or: [{ name: exactNameRegex }, { nameHindi: exactNameRegex }] });
+  const byName = await Food.findOne({
+    isActive: true,
+    $or: [{ name: exactNameRegex }, { nameHindi: exactNameRegex }],
+  });
   if (byName) return byName;
 
   if (tokens.length > 0) {
@@ -50,15 +52,17 @@ const resolveFoodForMealItem = async (item = {}) => {
 
   const requestedTerm = normalizeTerm(requestedName);
   const staticFoods = Array.isArray(FoodData) ? FoodData : [];
-  const staticFood = staticFoods.find((food) => {
-    const english = normalizeTerm(food?.name);
-    const hindi = normalizeTerm(food?.nameHindi);
-    return english === requestedTerm || hindi === requestedTerm;
-  }) || staticFoods.find((food) => {
-    if (!tokens.length) return false;
-    const searchText = `${normalizeTerm(food?.name)} ${normalizeTerm(food?.nameHindi)}`;
-    return tokens.every((token) => searchText.includes(token));
-  });
+  const staticFood =
+    staticFoods.find((food) => {
+      const english = normalizeTerm(food?.name);
+      const hindi = normalizeTerm(food?.nameHindi);
+      return english === requestedTerm || hindi === requestedTerm;
+    }) ||
+    staticFoods.find((food) => {
+      if (!tokens.length) return false;
+      const searchText = `${normalizeTerm(food?.name)} ${normalizeTerm(food?.nameHindi)}`;
+      return tokens.every((token) => searchText.includes(token));
+    });
 
   if (!staticFood) return null;
 
@@ -99,25 +103,71 @@ const enrichMeals = async (meals) => {
 
       const food = await resolveFoodForMealItem(item);
       if (!food || !food.isActive) {
-        throw new ApiError(404, `Food item not found: ${item.foodId || item.foodName || "unknown"}`);
+        throw new ApiError(
+          404,
+          `Food item not found: ${item.foodId || item.foodName || "unknown"}`
+        );
+      }
+
+      // Unit-aware totals: prioritize `servingGrams` or parse units like "200g".
+      const parseUnitToGrams = (unit) => {
+        if (!unit) return null;
+        const u = String(unit).toLowerCase().trim();
+        const gMatch = u.match(/(\d+)\s*g/);
+        if (gMatch) return Number(gMatch[1]);
+        const mlMatch = u.match(/(\d+)\s*ml/);
+        if (mlMatch) return Number(mlMatch[1]);
+        if (u.includes("bowl")) return 200;
+        if (u.includes("cup")) return 240;
+        if (u.includes("glass")) return 240;
+        if (u.includes("tbsp")) return 15;
+        return null;
+      };
+
+      const unitBase = parseUnitToGrams(food.unit);
+
+      let totalCalories = 0;
+      let totalProtein = 0;
+
+      if (food.servingGrams && unitBase) {
+        const perGramCal = (food.caloriesPerUnit || 0) / unitBase;
+        const perGramProt = (food.proteinPerUnit || 0) / unitBase;
+        totalCalories = perGramCal * food.servingGrams;
+        totalProtein = perGramProt * food.servingGrams;
+      } else if (unitBase && quantity && quantity >= 10) {
+        const perGramCal = (food.caloriesPerUnit || 0) / unitBase;
+        const perGramProt = (food.proteinPerUnit || 0) / unitBase;
+        totalCalories = perGramCal * quantity;
+        totalProtein = perGramProt * quantity;
+      } else {
+        totalCalories = (food.caloriesPerUnit || 0) * quantity;
+        totalProtein = (food.proteinPerUnit || 0) * quantity;
       }
 
       enrichedItems.push({
         foodId: food._id,
         foodName: food.name,
         quantity,
+        unit: food.unit,
+        servingGrams: food.servingGrams,
         caloriesPerUnit: food.caloriesPerUnit,
         proteinPerUnit: food.proteinPerUnit,
         carbsPerUnit: food.carbsPerUnit || 0,
         fatsPerUnit: food.fatsPerUnit || 0,
         fiberPerUnit: food.fiberPerUnit || 0,
         calciumPerUnit: food.calciumPerUnit || 0,
-        totalCalories: parseFloat((food.caloriesPerUnit * quantity).toFixed(2)),
-        totalProtein: parseFloat((food.proteinPerUnit * quantity).toFixed(2)),
-        totalCarbs: parseFloat(((food.carbsPerUnit || 0) * quantity).toFixed(2)),
+        totalCalories: parseFloat(totalCalories.toFixed(2)),
+        totalProtein: parseFloat(totalProtein.toFixed(2)),
+        totalCarbs: parseFloat(
+          ((food.carbsPerUnit || 0) * quantity).toFixed(2)
+        ),
         totalFats: parseFloat(((food.fatsPerUnit || 0) * quantity).toFixed(2)),
-        totalFiber: parseFloat(((food.fiberPerUnit || 0) * quantity).toFixed(2)),
-        totalCalcium: parseFloat(((food.calciumPerUnit || 0) * quantity).toFixed(2)),
+        totalFiber: parseFloat(
+          ((food.fiberPerUnit || 0) * quantity).toFixed(2)
+        ),
+        totalCalcium: parseFloat(
+          ((food.calciumPerUnit || 0) * quantity).toFixed(2)
+        ),
       });
     }
 
@@ -128,7 +178,6 @@ const enrichMeals = async (meals) => {
 
   return enriched;
 };
-
 
 const createOrUpdateDailyLog = asyncHandler(async (req, res) => {
   const { meals, waterIntake, sleepHours, steps, date } = req.body;
@@ -151,7 +200,10 @@ const createOrUpdateDailyLog = asyncHandler(async (req, res) => {
     steps,
   };
 
-  const existingLog = await DailyLog.findOne({ userId: req.user._id, date: logDate });
+  const existingLog = await DailyLog.findOne({
+    userId: req.user._id,
+    date: logDate,
+  });
 
   let log;
   if (existingLog) {
@@ -161,11 +213,10 @@ const createOrUpdateDailyLog = asyncHandler(async (req, res) => {
     log = await DailyLog.create(logData);
   }
 
-  return res.status(200).json(
-    new ApiResponse(200, log, "Daily log saved successfully.")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, log, "Daily log saved successfully."));
 });
-
 
 const updateMealSection = asyncHandler(async (req, res) => {
   const { date } = req.params;
@@ -182,7 +233,11 @@ const updateMealSection = asyncHandler(async (req, res) => {
       throw new ApiError(400, "Quantity must be a positive number.");
     }
     const food = await resolveFoodForMealItem(item);
-    if (!food || !food.isActive) throw new ApiError(404, `Food not found: ${item.foodId || item.foodName || "unknown"}`);
+    if (!food || !food.isActive)
+      throw new ApiError(
+        404,
+        `Food not found: ${item.foodId || item.foodName || "unknown"}`
+      );
 
     enrichedItems.push({
       foodId: food._id,
@@ -199,7 +254,9 @@ const updateMealSection = asyncHandler(async (req, res) => {
       totalCarbs: parseFloat(((food.carbsPerUnit || 0) * quantity).toFixed(2)),
       totalFats: parseFloat(((food.fatsPerUnit || 0) * quantity).toFixed(2)),
       totalFiber: parseFloat(((food.fiberPerUnit || 0) * quantity).toFixed(2)),
-      totalCalcium: parseFloat(((food.calciumPerUnit || 0) * quantity).toFixed(2)),
+      totalCalcium: parseFloat(
+        ((food.calciumPerUnit || 0) * quantity).toFixed(2)
+      ),
     });
   }
 
@@ -219,7 +276,6 @@ const updateMealSection = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, log, `${type} updated.`));
 });
 
-
 const updateVitals = asyncHandler(async (req, res) => {
   const { date } = req.params;
   const { waterIntake, sleepHours, steps } = req.body;
@@ -238,17 +294,26 @@ const updateVitals = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, log, "Vitals updated."));
 });
 
-
 const getTodayLog = asyncHandler(async (req, res) => {
   const today = getTodayIST();
-  const log = await DailyLog.findOne({ userId: req.user._id, date: today })
-    .populate("meals.items.foodId", "name nameHindi unit category caloriesPerUnit proteinPerUnit carbsPerUnit fatsPerUnit fiberPerUnit calciumPerUnit vitamins");
-
-  return res.status(200).json(
-    new ApiResponse(200, log || null, log ? "Today's log fetched." : "No log found for today.")
+  const log = await DailyLog.findOne({
+    userId: req.user._id,
+    date: today,
+  }).populate(
+    "meals.items.foodId",
+    "name nameHindi unit category caloriesPerUnit proteinPerUnit carbsPerUnit fatsPerUnit fiberPerUnit calciumPerUnit vitamins"
   );
-});
 
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        log || null,
+        log ? "Today's log fetched." : "No log found for today."
+      )
+    );
+});
 
 const getLogByDate = asyncHandler(async (req, res) => {
   const { date } = req.params;
@@ -257,18 +322,21 @@ const getLogByDate = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Date must be in YYYY-MM-DD format.");
   }
 
-  const log = await DailyLog.findOne({ userId: req.user._id, date })
-    .populate("meals.items.foodId", "name nameHindi unit category caloriesPerUnit proteinPerUnit carbsPerUnit fatsPerUnit fiberPerUnit calciumPerUnit vitamins");
+  const log = await DailyLog.findOne({ userId: req.user._id, date }).populate(
+    "meals.items.foodId",
+    "name nameHindi unit category caloriesPerUnit proteinPerUnit carbsPerUnit fatsPerUnit fiberPerUnit calciumPerUnit vitamins"
+  );
 
   if (!log) throw new ApiError(404, `No log found for ${date}.`);
 
   return res.status(200).json(new ApiResponse(200, log, "Log fetched."));
 });
 
-
 const getHistory = asyncHandler(async (req, res) => {
   const days = Math.min(parseInt(req.query.days) || 7, 30);
-  const summaryOnly = ["1", "true", "yes"].includes(String(req.query.summary || "").toLowerCase());
+  const summaryOnly = ["1", "true", "yes"].includes(
+    String(req.query.summary || "").toLowerCase()
+  );
 
   // Build date range
   const dates = [];
@@ -284,7 +352,9 @@ const getHistory = asyncHandler(async (req, res) => {
   }).sort({ date: -1 });
 
   if (summaryOnly) {
-    historyQuery = historyQuery.select("date meals totalCalories totalProtein totalFiber waterIntake sleepHours steps");
+    historyQuery = historyQuery.select(
+      "date meals totalCalories totalProtein totalFiber waterIntake sleepHours steps"
+    );
   }
 
   const logs = await historyQuery.lean();
@@ -292,7 +362,11 @@ const getHistory = asyncHandler(async (req, res) => {
   const payload = summaryOnly
     ? logs.map((log) => {
         const mealItemCount = Array.isArray(log?.meals)
-          ? log.meals.reduce((sum, meal) => sum + (Array.isArray(meal?.items) ? meal.items.length : 0), 0)
+          ? log.meals.reduce(
+              (sum, meal) =>
+                sum + (Array.isArray(meal?.items) ? meal.items.length : 0),
+              0
+            )
           : 0;
 
         return {
