@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api from '../utils/api'
 import Button from '../components/ui/Button'
@@ -6,8 +6,10 @@ import Input from '../components/ui/Input'
 import Brand from '../components/Brand'
 import { useLocation } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Auth(){
+  const auth = useAuth()
   const { language } = useLanguage()
   const isHindi = language === 'hi'
   const location = useLocation()
@@ -19,6 +21,11 @@ export default function Auth(){
 
   const initialMessage = location.state?.message || null
   const [infoMessage, setInfoMessage] = useState(initialMessage)
+
+  useEffect(() => {
+    api.prewarmBackend?.().catch(()=>{})
+    import('./Dashboard').catch(()=>{})
+  }, [])
 
   return (
     <div className="auth-root">
@@ -52,9 +59,7 @@ export default function Auth(){
             setError(null)
             setLoading(true)
             try{
-              const res = await api.login({ email, password })
-              // save access token (server also sets cookies)
-              if(res?.data?.accessToken) api.saveToken(res.data.accessToken)
+              await auth.login({ email, password }, { rememberMe: false })
               setLoading(false)
               navigate('/dashboard')
             }catch(err){

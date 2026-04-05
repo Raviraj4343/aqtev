@@ -30,6 +30,8 @@ export default function SignIn(){
   useEffect(()=>{
     // Warm backend in the background so login tap is faster on cold hosts/mobile.
     api.prewarmBackend?.().catch(()=>{})
+    // Preload dashboard chunk so route transition after login is faster.
+    import('./Dashboard').catch(()=>{})
   }, [])
 
   useEffect(()=>{
