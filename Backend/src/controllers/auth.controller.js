@@ -3,6 +3,7 @@ import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import crypto from "crypto";
+import bcrypt from "bcrypt";
 import tokenUtils from "../utils/gererateToken.js";
 import sendemail from "../utils/sendemail.js";
 import { COOKIE_OPTIONS } from "../constants.js";
@@ -35,13 +36,13 @@ const parseExpiryToMs = (value, fallbackMs) => {
   return amount * unitMs[unit];
 };
 
-const issueTokens = async (user, res) => {
-  const accessToken = tokenUtils.generateAccessToken(user._id);
-  const refreshToken = tokenUtils.generateRefreshToken(user._id);
+const issueTokens = async (userId, res) => {
+  const accessToken = tokenUtils.generateAccessToken(userId);
+  const refreshToken = tokenUtils.generateRefreshToken(userId);
 
   // Persist refresh token without going through full document save lifecycle.
   await User.findByIdAndUpdate(
-    user._id,
+    userId,
     { $set: { refreshToken } },
     { new: false }
   );
@@ -303,17 +304,19 @@ const resetPassword = asyncHandler(async (req, res) => {
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email }).select("+password");
+  const user = await User.findOne({ email })
+    .select("_id name email profileCompleted isEmailVerified +password")
+    .lean();
   if (!user) throw new ApiError(401, "Invalid email or password.");
 
-  const isMatch = await user.isPasswordCorrect(password);
+  const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) throw new ApiError(401, "Invalid email or password.");
 
   if (!user.isEmailVerified) {
     throw new ApiError(403, "Please verify your email before logging in.");
   }
 
-  const { accessToken, refreshToken } = await issueTokens(user, res);
+  const { accessToken, refreshToken } = await issueTokens(user._id, res);
 
   return res.status(200).json(
     new ApiResponse(
@@ -372,7 +375,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Refresh token is invalid or has been revoked.");
   }
 
-  const { accessToken, refreshToken } = await issueTokens(user, res);
+  const { accessToken, refreshToken } = await issueTokens(user._id, res);
 
   return res
     .status(200)
