@@ -133,17 +133,8 @@ export default function Profile(){
     setPendingSavePayload(payload)
   }
 
-  const handleAvatarChange = (file) => {
-    if (!file) return
-    setAvatarFile(file)
-    setStatus('')
-    try {
-      setAvatarPreview(URL.createObjectURL(file))
-    } catch (e) {}
-  }
-
-  const handleAvatarUpload = async () => {
-    if (!avatarFile) {
+  const handleAvatarUpload = async (fileToUpload = avatarFile) => {
+    if (!fileToUpload) {
       setStatus(t('profile.status.chooseImage'))
       return
     }
@@ -151,7 +142,7 @@ export default function Profile(){
     setUploading(true)
     setStatus('')
     try {
-      await api.uploadAvatar(avatarFile)
+      await api.uploadAvatar(fileToUpload)
       await refresh()
       setAvatarFile(null)
       setStatus(t('profile.status.avatarUploaded'))
@@ -160,6 +151,16 @@ export default function Profile(){
     } finally {
       setUploading(false)
     }
+  }
+
+  const handleAvatarChange = (file) => {
+    if (!file) return
+    setAvatarFile(file)
+    setStatus('')
+    try {
+      setAvatarPreview(URL.createObjectURL(file))
+    } catch (e) {}
+    void handleAvatarUpload(file)
   }
 
   const handleCancelEdit = () => {
@@ -192,41 +193,36 @@ export default function Profile(){
 
         <div className="card profile-card profile-shell">
           <section className="profile-hero">
+            <div className="profile-hero-head">
+              {user?.profileCompleted && !isEditing ? (
+                <Button onClick={() => { setIsEditing(true); setStatus('') }} className="profile-edit-trigger">
+                  {t('profile.edit')}
+                </Button>
+              ) : <span aria-hidden="true" />}
+            </div>
+
             <div className="profile-avatar-wrap">
-              <div className="profile-avatar">
-                {avatarPreview ? (
-                  <img src={avatarPreview} alt={t('profile.avatarAlt', { name: user?.name || 'User' })} className="profile-avatar-image" />
-                ) : (
-                  <span className="profile-avatar-fallback" aria-hidden="true">
-                    {(user?.name || form.name || 'U').trim().charAt(0).toUpperCase()}
-                  </span>
-                )}
+              <div className="profile-avatar-stack">
+                <div className="profile-avatar">
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt={t('profile.avatarAlt', { name: user?.name || 'User' })} className="profile-avatar-image" />
+                  ) : (
+                    <span className="profile-avatar-fallback" aria-hidden="true">
+                      {(user?.name || form.name || 'U').trim().charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <label htmlFor="avatar" className="profile-avatar-camera" title={t('profile.chooseImage')} aria-label={t('profile.chooseImage')}>
+                  <input id="avatar" className="profile-file-input" type="file" accept="image/*" onChange={(e) => handleAvatarChange(e.target.files?.[0])} disabled={uploading} />
+                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+                    <path d="M9 4.5a1 1 0 0 1 .84-.46h4.32a1 1 0 0 1 .84.46l.86 1.3h2.14a2.5 2.5 0 0 1 2.5 2.5v8.2a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 16.5V8.3A2.5 2.5 0 0 1 6 5.8h2.14zm3 3.8a4.2 4.2 0 1 0 0 8.4 4.2 4.2 0 0 0 0-8.4m0 2a2.2 2.2 0 1 1 0 4.4 2.2 2.2 0 0 1 0-4.4" fill="currentColor" />
+                  </svg>
+                </label>
               </div>
 
-              <div className="profile-avatar-actions">
-                <div className="profile-avatar-head">
-                  <div className="profile-avatar-copy">
-                    <h2>{user?.name || form.name || t('profile.yourProfile')}</h2>
-                    <p>{user?.email || t('profile.addDetailsHint')}</p>
-                  </div>
-                  {user?.profileCompleted && !isEditing ? (
-                    <Button onClick={() => { setIsEditing(true); setStatus('') }} className="profile-edit-trigger">
-                      {t('profile.edit')}
-                    </Button>
-                  ) : null}
-                </div>
-
-                <div className="profile-upload-row">
-                  <label htmlFor="avatar" className="profile-file-label">{t('profile.chooseImage')}</label>
-                  <input id="avatar" className="profile-file-input" type="file" accept="image/*" onChange={(e) => handleAvatarChange(e.target.files?.[0])} />
-                  <span className="profile-file-name">{avatarFile ? avatarFile.name : t('profile.imageHint')}</span>
-                </div>
-
-                <div className="profile-upload-actions">
-                  <Button onClick={handleAvatarUpload} disabled={uploading || !avatarFile}>
-                    {uploading ? t('profile.uploading') : t('profile.uploadAvatar')}
-                  </Button>
-                </div>
+              <div className="profile-avatar-copy">
+                <h2>{user?.name || form.name || t('profile.yourProfile')}</h2>
+                <p>{user?.email || t('profile.addDetailsHint')}</p>
               </div>
             </div>
 

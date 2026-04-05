@@ -364,19 +364,19 @@ a:hover{color:var(--color-accent);text-decoration:underline}
 .profile-edit-trigger{margin-top:0;min-height:44px;padding:0 16px;align-self:flex-start}
 .profile-shell{display:grid;gap:20px;padding:24px}
 .profile-hero{display:grid;gap:18px}
-.profile-avatar-wrap{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.profile-hero-head{display:flex;justify-content:flex-end;min-height:44px}
+.profile-avatar-wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.profile-avatar-stack{position:relative;display:inline-flex}
 .profile-avatar{width:108px;height:108px;border-radius:32px;overflow:hidden;background:linear-gradient(135deg,rgba(0,119,217,0.14),rgba(57,181,74,0.18));display:flex;align-items:center;justify-content:center;box-shadow:0 18px 32px rgba(2,20,38,0.1);flex-shrink:0}
 .profile-avatar-image{width:100%;height:100%;object-fit:cover}
 .profile-avatar-fallback{font-size:38px;font-weight:800;color:var(--color-primary)}
-.profile-avatar-actions{display:grid;gap:12px;flex:1;min-width:min(100%,360px)}
-.profile-avatar-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.profile-avatar-camera{position:absolute;right:-4px;bottom:-4px;width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg,#0284c7,#10b981);color:#fff;border:2px solid var(--color-surface);box-shadow:0 8px 18px rgba(2,20,38,0.2);cursor:pointer;transition:transform .18s ease,opacity .18s ease}
+.profile-avatar-camera:hover{transform:translateY(-1px)}
+.profile-avatar-camera:active{transform:translateY(0)}
+.profile-avatar-camera:has(input:disabled){opacity:.6;cursor:not-allowed}
 .profile-avatar-copy h2{margin:0;font-size:28px;line-height:1.1}
 .profile-avatar-copy p{margin:6px 0 0;color:var(--color-muted)}
-.profile-upload-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
-.profile-file-label{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:14px;border:1px solid rgba(14,116,144,0.16);background:rgba(233,239,241,0.72);font-weight:700;color:var(--color-primary);cursor:pointer}
 .profile-file-input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
-.profile-file-name{font-size:13px;color:var(--color-muted);word-break:break-word}
-.profile-upload-actions .btn-primary{margin-top:0}
 .profile-language-panel{display:grid;gap:8px;padding:16px 18px;border-radius:20px;background:rgba(233,239,241,0.72);border:1px solid rgba(233,239,241,0.66)}
 .profile-language-label{grid-column:auto;margin:0}
 .profile-language-panel select{min-height:48px;padding:0 14px;border-radius:14px;border:1px solid rgba(15,23,42,0.08);background:rgba(233,239,241,0.88);font:inherit;color:var(--color-text)}
@@ -771,7 +771,7 @@ a:hover{color:var(--color-accent);text-decoration:underline}
 
 @media (max-width:800px){
   .profile-top{align-items:stretch;flex-direction:column}
-  .profile-avatar-head{flex-direction:column}
+  .profile-hero-head{justify-content:flex-start}
   .profile-summary-grid,.profile-overview-grid{grid-template-columns:1fr}
   .profile-form{grid-template-columns:1fr}
   .profile-form-actions,.field-label,.error-text{grid-column:auto}
@@ -933,6 +933,7 @@ a:hover{color:var(--color-accent);text-decoration:underline}
   .sidebar-close{width:40px;height:40px}
   .profile-shell{padding:18px}
   .profile-avatar{width:90px;height:90px;border-radius:26px}
+  .profile-avatar-camera{width:34px;height:34px}
   .profile-avatar-copy h2{font-size:24px}
   .profile-form-actions{flex-direction:column}
   .dashboard-hero{padding:20px}
