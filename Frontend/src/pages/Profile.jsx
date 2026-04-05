@@ -169,6 +169,10 @@ export default function Profile(){
     setStatus('')
   }
 
+  const handleLanguageToggle = () => {
+    setLanguage(language === 'en' ? 'hi' : 'en')
+  }
+
   const profileSummary = [
     { label: t('profile.goal'), value: t(`profile.goalOptions.${user?.goal || form.goal}`, {}, prettify(user?.goal || form.goal)) },
     { label: t('profile.activity'), value: t(`profile.activityOptions.${user?.activityLevel || form.activityLevel}`, {}, prettify(user?.activityLevel || form.activityLevel)) },
@@ -224,15 +228,6 @@ export default function Profile(){
                 <h2>{user?.name || form.name || t('profile.yourProfile')}</h2>
                 <p>{user?.email || t('profile.addDetailsHint')}</p>
               </div>
-            </div>
-
-            <div className="profile-language-panel">
-              <label className="field-label profile-language-label">{t('profile.languagePreference')}</label>
-              <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-                <option value="en">{t('common.english')}</option>
-                <option value="hi">{t('common.hindi')}</option>
-              </select>
-              <div className="profile-language-hint">{t('profile.languageHint')}</div>
             </div>
 
             <div className="profile-summary-grid">
@@ -363,6 +358,21 @@ export default function Profile(){
               </div>
             </section>
           )}
+
+          <div className="profile-language-footer">
+            <span className="profile-language-footer-label">{t('profile.languagePreference')}</span>
+            <button
+              type="button"
+              className={`profile-language-switch ${language === 'hi' ? 'is-hindi' : 'is-english'}`}
+              onClick={handleLanguageToggle}
+              aria-label={t('profile.languagePreference')}
+            >
+              <span className="profile-language-switch-track" aria-hidden="true">
+                <span className="profile-language-switch-thumb" />
+              </span>
+              <span className="profile-language-switch-text">{language === 'en' ? t('common.english') : t('common.hindi')}</span>
+            </button>
+          </div>
         </div>
       </div>
 

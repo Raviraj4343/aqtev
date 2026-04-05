@@ -377,10 +377,6 @@ a:hover{color:var(--color-accent);text-decoration:underline}
 .profile-avatar-copy h2{margin:0;font-size:28px;line-height:1.1}
 .profile-avatar-copy p{margin:6px 0 0;color:var(--color-muted)}
 .profile-file-input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
-.profile-language-panel{display:grid;gap:8px;padding:16px 18px;border-radius:20px;background:rgba(233,239,241,0.72);border:1px solid rgba(233,239,241,0.66)}
-.profile-language-label{grid-column:auto;margin:0}
-.profile-language-panel select{min-height:48px;padding:0 14px;border-radius:14px;border:1px solid rgba(15,23,42,0.08);background:rgba(233,239,241,0.88);font:inherit;color:var(--color-text)}
-.profile-language-hint{font-size:12px;color:var(--color-muted)}
 .profile-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .profile-summary-card{padding:16px 18px;border-radius:20px;background:rgba(233,239,241,0.7);border:1px solid rgba(233,239,241,0.66);box-shadow:0 12px 24px rgba(11,31,36,0.06)}
 .profile-summary-label{display:block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(7,89,133,0.72);margin-bottom:8px}
@@ -396,6 +392,14 @@ a:hover{color:var(--color-accent);text-decoration:underline}
 .profile-detail-card{padding:18px;border-radius:20px;background:rgba(233,239,241,0.66);border:1px solid rgba(233,239,241,0.64);box-shadow:0 10px 24px rgba(11,31,36,0.05)}
 .profile-detail-card strong{display:block;font-size:18px;line-height:1.35;color:var(--color-text)}
 .profile-detail-label{display:block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(7,89,133,0.7);margin-bottom:8px}
+.profile-language-footer{margin-top:2px;padding:14px 16px;border-radius:16px;background:rgba(233,239,241,0.62);border:1px solid rgba(233,239,241,0.66);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.profile-language-footer-label{font-size:13px;font-weight:700;color:var(--color-muted)}
+.profile-language-switch{display:inline-flex;align-items:center;gap:10px;padding:6px 10px;border-radius:999px;border:1px solid rgba(2,132,199,0.18);background:#fff;color:var(--color-primary);font:inherit;font-weight:700;cursor:pointer}
+.profile-language-switch-track{position:relative;width:46px;height:26px;border-radius:999px;background:rgba(2,132,199,0.16);display:inline-flex;align-items:center;padding:3px;transition:background .2s ease}
+.profile-language-switch-thumb{width:20px;height:20px;border-radius:50%;background:#0284c7;transform:translateX(0);transition:transform .2s ease, background .2s ease}
+.profile-language-switch.is-hindi .profile-language-switch-track{background:rgba(16,185,129,0.18)}
+.profile-language-switch.is-hindi .profile-language-switch-thumb{transform:translateX(20px);background:#10b981}
+.profile-language-switch-text{min-width:44px;text-align:left;font-size:13px}
 
 .field.error input{border-color:var(--color-danger);box-shadow:none}
 .error-select{border:1px solid var(--color-danger);border-radius:8px;padding:10px}
@@ -771,7 +775,7 @@ a:hover{color:var(--color-accent);text-decoration:underline}
 
 @media (max-width:800px){
   .profile-top{align-items:stretch;flex-direction:column}
-  .profile-hero-head{justify-content:flex-start}
+  .profile-hero-head{justify-content:flex-end}
   .profile-summary-grid,.profile-overview-grid{grid-template-columns:1fr}
   .profile-form{grid-template-columns:1fr}
   .profile-form-actions,.field-label,.error-text{grid-column:auto}
