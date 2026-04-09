@@ -673,6 +673,7 @@ h4{
 .weight-chart-foot span{font-size:13px;color:var(--color-muted)}
 .weight-chart-foot strong{font-size:15px;color:var(--color-primary)}
 .trend-metric-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
+.trend-metric-grid-2x2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .trend-metric-card{padding:14px;border-radius:18px;background:rgba(233,239,241,0.4);border:1px solid rgba(2,132,199,0.12)}
 .trend-metric-card h4{margin:0 0 10px;font-size:16px;color:var(--color-text)}
 .trend-metric-clickable{cursor:pointer;transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease}
@@ -691,7 +692,7 @@ h4{
 .trend-header-copy h1{margin:0 0 8px;font-size:clamp(30px,3.3vw,42px);line-height:1.1}
 .trend-header-copy p{margin:0;max-width:58ch;font-size:16px;line-height:1.6}
 
-.trend-summary-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.trend-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .trend-stat-card{padding:16px;border-radius:18px;background:rgba(233,239,241,0.66);border:1px solid rgba(2,132,199,0.1)}
 
 .trend-charts-shell{padding:20px}
@@ -718,7 +719,7 @@ h4{
   .weight-chart-foot{padding:9px 10px}
   .weight-chart-foot span{font-size:12px}
   .weight-chart-foot strong{font-size:14px}
-  .trend-metric-grid{grid-template-columns:1fr}
+  .trend-metric-grid,.trend-metric-grid-2x2{grid-template-columns:1fr}
   .trend-modal-backdrop{padding:12px}
   .trend-modal-card{padding:16px 14px 12px}
   .trend-modal-head h3{font-size:20px}

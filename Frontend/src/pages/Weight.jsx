@@ -127,7 +127,6 @@ export default function Weight(){
   ]), [history, isHindi, metricTrendData])
 
   const activeChart = chartConfigs.find((chart) => chart.key === activeChartKey) || null
-  const primaryChart = chartConfigs[0] || null
   const activeChartProps = activeChart
     ? {
         data: activeChart.data,
@@ -140,12 +139,11 @@ export default function Weight(){
     : null
 
   const summary = useMemo(() => [
-    { label: isHindi ? 'नवीनतम वज़न' : 'Latest weight', value: latestWeight ?? '-', suffix: latestWeight ? 'kg' : '' },
     { label: isHindi ? 'साप्ताहिक बदलाव' : 'Weekly change', value: weekly?.weeklyChange ?? '-', suffix: weekly?.weeklyChange || weekly?.weeklyChange === 0 ? 'kg' : '' },
     { label: isHindi ? 'औसत कैलोरी' : 'Avg calories', value: averages.calories ?? '-', suffix: 'kcal/day' },
     { label: isHindi ? 'औसत प्रोटीन' : 'Avg protein', value: averages.protein ?? '-', suffix: 'g/day' },
     { label: isHindi ? 'औसत कदम' : 'Avg steps', value: averages.steps ?? '-', suffix: isHindi ? 'कदम/दिन' : 'steps/day' },
-  ], [averages, isHindi, latestWeight, weekly])
+  ], [averages, isHindi, weekly])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -205,35 +203,8 @@ export default function Weight(){
           </div>
         </div>
 
-        <div
-          className="trend-metric-card trend-metric-clickable"
-          role="button"
-          tabIndex={0}
-          onClick={() => setActiveChartKey('weight')}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault()
-              setActiveChartKey('weight')
-            }
-          }}
-          aria-label={isHindi ? 'वज़न ट्रेंड बड़ा देखें' : 'Open weight trend in popup'}
-        >
-          <h4>{isHindi ? 'वज़न ट्रेंड' : 'Weight trend'}</h4>
-          {primaryChart ? (
-            <WeightChart
-              data={primaryChart.data}
-              loading={loading}
-              metricKey={primaryChart.metricKey}
-              unit={primaryChart.unit}
-              seriesLabel={primaryChart.seriesLabel}
-              emptyText={primaryChart.emptyText}
-              decimals={primaryChart.decimals}
-            />
-          ) : null}
-        </div>
-
-        <div className="trend-metric-grid">
-          {chartConfigs.slice(1).map((chart) => {
+        <div className="trend-metric-grid trend-metric-grid-2x2">
+          {chartConfigs.map((chart) => {
             const { key, title, ...chartProps } = chart
             return (
               <div
@@ -257,7 +228,6 @@ export default function Weight(){
           })}
         </div>
 
-        {trend?.message ? <div className="feature-inline-note">{trend.message}</div> : null}
       </section>
 
       <div className="trend-divider" aria-hidden="true" />
