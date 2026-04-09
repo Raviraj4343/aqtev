@@ -37,7 +37,7 @@ It provides real-time tracking, intelligent suggestions, and a clean user experi
 ## 🚀 Download FitCek App
 
 <p align="center">
-  <a href="https://github.com/Raviraj4343/fitcek/releases/download/v1.1/FitCkek-v1.1.apk">
+  <a href="https://github.com/Raviraj4343/fitcek/releases/download/v2.0/FitCek.apk">
     <img src="https://img.shields.io/badge/⬇%20Download%20APK-FitCek-3DDC84?style=for-the-badge&logo=android&logoColor=white"/>
   </a>
 </p>
