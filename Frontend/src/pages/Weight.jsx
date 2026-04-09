@@ -10,26 +10,31 @@ export default function Weight(){
   const { language } = useLanguage()
   const isHindi = language === 'hi'
   const [history, setHistory] = useState([])
+  const [dailyHistory, setDailyHistory] = useState([])
   const [trend, setTrend] = useState(null)
   const [weekly, setWeekly] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({ weightKg: '', note: '' })
+  const [form, setForm] = useState({ weightKg: '' })
   const [status, setStatus] = useState('')
+  const [activeChartKey, setActiveChartKey] = useState(null)
 
   const load = async () => {
     setLoading(true)
     try {
-      const [historyResponse, weeklyResponse] = await Promise.all([
+      const [historyResponse, weeklyResponse, dailyHistoryResponse] = await Promise.all([
         api.getWeightHistory({ days: 30 }),
-        api.getWeeklyWeightSummary()
+        api.getWeeklyWeightSummary(),
+        api.getHistoryLogs({ days: 30, summary: true })
       ])
       const historyData = historyResponse?.data || {}
       setHistory(historyData.logs || [])
       setTrend(historyData.trend || null)
       setWeekly(weeklyResponse?.data || null)
+      setDailyHistory(Array.isArray(dailyHistoryResponse?.data) ? dailyHistoryResponse.data : [])
     } catch (e) {
       setHistory([])
+      setDailyHistory([])
       setTrend(null)
       setWeekly(null)
     } finally {
@@ -41,11 +46,106 @@ export default function Weight(){
 
   const latestWeight = history.length ? history[history.length - 1]?.weightKg : null
 
+  const metricTrendData = useMemo(() => {
+    const rows = Array.isArray(dailyHistory) ? dailyHistory : []
+    return {
+      calories: rows.map((entry, index) => ({
+        _id: `cal-${entry?.date || index}`,
+        date: entry?.date,
+        totalCalories: Number(entry?.totalCalories) || 0,
+      })),
+      protein: rows.map((entry, index) => ({
+        _id: `pro-${entry?.date || index}`,
+        date: entry?.date,
+        totalProtein: Number(entry?.totalProtein) || 0,
+      })),
+      steps: rows.map((entry, index) => ({
+        _id: `steps-${entry?.date || index}`,
+        date: entry?.date,
+        steps: Number(entry?.steps) || 0,
+      }))
+    }
+  }, [dailyHistory])
+
+  const averages = useMemo(() => {
+    if (!dailyHistory.length) return { calories: null, protein: null, steps: null }
+
+    const totals = dailyHistory.reduce((acc, row) => ({
+      calories: acc.calories + (Number(row?.totalCalories) || 0),
+      protein: acc.protein + (Number(row?.totalProtein) || 0),
+      steps: acc.steps + (Number(row?.steps) || 0),
+    }), { calories: 0, protein: 0, steps: 0 })
+
+    return {
+      calories: Math.round(totals.calories / dailyHistory.length),
+      protein: Math.round(totals.protein / dailyHistory.length),
+      steps: Math.round(totals.steps / dailyHistory.length),
+    }
+  }, [dailyHistory])
+
+  const chartConfigs = useMemo(() => ([
+    {
+      key: 'weight',
+      title: isHindi ? 'वज़न ट्रेंड' : 'Weight trend',
+      data: history,
+      metricKey: 'weightKg',
+      unit: 'kg',
+      seriesLabel: isHindi ? 'वज़न' : 'Weight',
+      emptyText: isHindi ? 'अभी वज़न डेटा नहीं है।' : 'No weight data yet.',
+      decimals: 1,
+    },
+    {
+      key: 'calories',
+      title: isHindi ? 'कैलोरी ट्रेंड' : 'Calorie trend',
+      data: metricTrendData.calories,
+      metricKey: 'totalCalories',
+      unit: 'kcal',
+      seriesLabel: isHindi ? 'कैलोरी' : 'Calories',
+      emptyText: isHindi ? 'अभी कैलोरी डेटा नहीं है।' : 'No calorie data yet.',
+      decimals: 0,
+    },
+    {
+      key: 'protein',
+      title: isHindi ? 'प्रोटीन ट्रेंड' : 'Protein trend',
+      data: metricTrendData.protein,
+      metricKey: 'totalProtein',
+      unit: 'g',
+      seriesLabel: isHindi ? 'प्रोटीन' : 'Protein',
+      emptyText: isHindi ? 'अभी प्रोटीन डेटा नहीं है।' : 'No protein data yet.',
+      decimals: 0,
+    },
+    {
+      key: 'steps',
+      title: isHindi ? 'स्टेप्स ट्रेंड' : 'Steps trend',
+      data: metricTrendData.steps,
+      metricKey: 'steps',
+      unit: isHindi ? 'कदम' : 'steps',
+      seriesLabel: isHindi ? 'स्टेप्स' : 'Steps',
+      emptyText: isHindi ? 'अभी स्टेप्स डेटा नहीं है।' : 'No steps data yet.',
+      decimals: 0,
+    }
+  ]), [history, isHindi, metricTrendData])
+
+  const activeChart = chartConfigs.find((chart) => chart.key === activeChartKey) || null
+  const primaryChart = chartConfigs[0] || null
+  const activeChartProps = activeChart
+    ? {
+        data: activeChart.data,
+        metricKey: activeChart.metricKey,
+        unit: activeChart.unit,
+        seriesLabel: activeChart.seriesLabel,
+        emptyText: activeChart.emptyText,
+        decimals: activeChart.decimals,
+      }
+    : null
+
   const summary = useMemo(() => [
     { label: isHindi ? 'नवीनतम वज़न' : 'Latest weight', value: latestWeight ?? '-', suffix: latestWeight ? 'kg' : '' },
-    { label: isHindi ? 'एंट्री' : 'Entries', value: history.length, suffix: isHindi ? '30 दिन' : '30 days' },
-    { label: isHindi ? 'साप्ताहिक बदलाव' : 'Weekly change', value: weekly?.weeklyChange ?? '-', suffix: weekly?.weeklyChange || weekly?.weeklyChange === 0 ? 'kg' : '' }
-  ], [history.length, isHindi, latestWeight, weekly])
+    { label: isHindi ? 'साप्ताहिक बदलाव' : 'Weekly change', value: weekly?.weeklyChange ?? '-', suffix: weekly?.weeklyChange || weekly?.weeklyChange === 0 ? 'kg' : '' },
+    { label: isHindi ? 'औसत कैलोरी' : 'Avg calories', value: averages.calories ?? '-', suffix: 'kcal/day' },
+    { label: isHindi ? 'औसत प्रोटीन' : 'Avg protein', value: averages.protein ?? '-', suffix: 'g/day' },
+    { label: isHindi ? 'औसत कदम' : 'Avg steps', value: averages.steps ?? '-', suffix: isHindi ? 'कदम/दिन' : 'steps/day' },
+  ], [averages, isHindi, latestWeight, weekly])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -58,10 +158,9 @@ export default function Weight(){
     setStatus('')
     try {
       await api.logWeight({
-        weightKg: Number(form.weightKg),
-        note: form.note || undefined
+        weightKg: Number(form.weightKg)
       })
-      setForm({ weightKg: '', note: '' })
+      setForm({ weightKg: '' })
       setStatus(isHindi ? 'वज़न सफलतापूर्वक सहेजा गया।' : 'Weight saved successfully.')
       await load()
     } catch (err) {
@@ -72,27 +171,21 @@ export default function Weight(){
   }
 
   return (
-    <div className="page feature-page feature-weight">
-      <section className="feature-hero card">
-        <div className="feature-hero-copy">
-          <span className="feature-eyebrow">{isHindi ? 'वज़न' : 'Weight'}</span>
-          <h1>{isHindi ? 'समय के साथ लॉग और रुझान' : 'Logs and trends over time'}</h1>
+    <div className="page feature-page feature-weight trend-page">
+      <section className="card trend-header">
+        <div className="trend-header-copy">
+          <span className="feature-eyebrow">{isHindi ? 'ट्रेंड' : 'Trend'}</span>
+          <h1>{isHindi ? 'प्रगति ट्रैकिंग' : 'Progress tracking'}</h1>
           <p className="muted">
-            {isHindi ? 'अपनी प्रगति लाइन सरल रखें, साप्ताहिक बदलाव देखें और आज का माप यहीं जोड़ें।' : 'Keep your trend line simple, see your weekly change, and add today\'s measurement without leaving the page.'}
+            {isHindi ? 'वज़न, कैलोरी, प्रोटीन और कदम के ट्रेंड को एक साफ और प्रोफेशनल दृश्य में देखें।' : 'Track weight, calories, protein, and steps in one clean professional view.'}
           </p>
         </div>
-        <div className="feature-hero-aside">
-          <span className="feature-date-chip">{isHindi ? 'पिछले 30 दिन' : 'Last 30 days'}</span>
-          <div className="feature-orbit feature-orbit-green">
-            <strong>{loading ? '-' : latestWeight ?? '-'}</strong>
-            <span>{latestWeight ? (isHindi ? 'वर्तमान किग्रा' : 'kg current') : (isHindi ? 'अभी कोई एंट्री नहीं' : 'no entries yet')}</span>
-          </div>
-        </div>
+        <span className="feature-date-chip">{isHindi ? 'पिछले 30 दिन' : 'Last 30 days'}</span>
       </section>
 
-      <section className="feature-summary-grid feature-summary-grid-compact">
+      <section className="trend-summary-grid">
         {summary.map((item) => (
-          <Card key={item.label} className="feature-stat-card">
+          <Card key={item.label} className="trend-stat-card">
             <span className="feature-stat-label">{item.label}</span>
             <strong className="feature-stat-value">{loading ? '-' : item.value}</strong>
             <span className="feature-stat-note">{item.suffix}</span>
@@ -100,47 +193,120 @@ export default function Weight(){
         ))}
       </section>
 
-      <section className="feature-layout">
-        <Card className="feature-main-panel">
-          <div className="feature-panel-head">
-            <div>
-              <h3>{isHindi ? 'ट्रेंड दृश्य' : 'Trend view'}</h3>
-              <p className="muted">{isHindi ? 'हाल की एंट्री और साप्ताहिक बदलाव एक नज़र में देखें।' : 'Review your recent entries and weekly movement at a glance.'}</p>
-            </div>
+      <section className="card trend-charts-shell">
+        <div className="feature-panel-head">
+          <div>
+            <h3>{isHindi ? 'ट्रेंड चार्ट' : 'Trend charts'}</h3>
+            <p className="muted">{isHindi ? 'किसी भी चार्ट पर क्लिक करें और इंटरैक्टिव पॉइंट्स देखें।' : 'Click any chart for an expanded interactive point view.'}</p>
           </div>
-          <WeightChart data={history} loading={loading} />
-          {trend?.message ? <div className="feature-inline-note">{trend.message}</div> : null}
-        </Card>
+        </div>
 
-        <Card className="feature-side-panel">
-          <div className="feature-panel-head">
-            <div>
-              <h3>{isHindi ? 'आज का वज़न लॉग करें' : "Log today's weight"}</h3>
-              <p className="muted">{isHindi ? 'आज की रीडिंग जोड़ें और प्रगति अपडेट रखें।' : "Add today's reading and keep your progress up to date."}</p>
-            </div>
-          </div>
-
-          <form className="feature-form-stack" onSubmit={handleSubmit}>
-            <Input
-              id="weight-kg"
-              label={isHindi ? 'वज़न (किग्रा)' : 'Weight (kg)'}
-              type="number"
-              value={form.weightKg}
-              onChange={(e) => setForm((prev) => ({ ...prev, weightKg: e.target.value }))}
+        <div
+          className="trend-metric-card trend-metric-clickable"
+          role="button"
+          tabIndex={0}
+          onClick={() => setActiveChartKey('weight')}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              setActiveChartKey('weight')
+            }
+          }}
+          aria-label={isHindi ? 'वज़न ट्रेंड बड़ा देखें' : 'Open weight trend in popup'}
+        >
+          <h4>{isHindi ? 'वज़न ट्रेंड' : 'Weight trend'}</h4>
+          {primaryChart ? (
+            <WeightChart
+              data={primaryChart.data}
+              loading={loading}
+              metricKey={primaryChart.metricKey}
+              unit={primaryChart.unit}
+              seriesLabel={primaryChart.seriesLabel}
+              emptyText={primaryChart.emptyText}
+              decimals={primaryChart.decimals}
             />
-            <Input
-              id="weight-note"
-              label={isHindi ? 'नोट (वैकल्पिक)' : 'Note (optional)'}
-              value={form.note}
-              onChange={(e) => setForm((prev) => ({ ...prev, note: e.target.value }))}
-            />
-            <Button type="submit" disabled={saving}>{saving ? (isHindi ? 'सहेजा जा रहा है...' : 'Saving...') : (isHindi ? 'वज़न सहेजें' : 'Save weight')}</Button>
-          </form>
+          ) : null}
+        </div>
 
-          {status ? <div className="feature-inline-note">{status}</div> : null}
-          {weekly?.message ? <div className="feature-empty compact"><strong>{isHindi ? 'साप्ताहिक सारांश' : 'Weekly summary'}</strong><p className="muted">{weekly.message}</p></div> : null}
-        </Card>
+        <div className="trend-metric-grid">
+          {chartConfigs.slice(1).map((chart) => {
+            const { key, title, ...chartProps } = chart
+            return (
+              <div
+                key={key}
+                className="trend-metric-card trend-metric-clickable"
+                role="button"
+                tabIndex={0}
+                onClick={() => setActiveChartKey(key)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    setActiveChartKey(key)
+                  }
+                }}
+                aria-label={isHindi ? `${title} बड़ा देखें` : `Open ${title} in popup`}
+              >
+                <h4>{title}</h4>
+                <WeightChart {...chartProps} loading={loading} />
+              </div>
+            )
+          })}
+        </div>
+
+        {trend?.message ? <div className="feature-inline-note">{trend.message}</div> : null}
       </section>
+
+      <section className="card trend-quick-log">
+        <div className="feature-panel-head">
+          <div>
+            <h3>{isHindi ? 'त्वरित वज़न लॉग' : 'Quick weight log'}</h3>
+            <p className="muted">{isHindi ? 'आज का वज़न जोड़ें और ट्रेंड तुरंत अपडेट करें।' : 'Add today\'s weight and update your trend instantly.'}</p>
+          </div>
+        </div>
+
+        <form className="trend-quick-log-form" onSubmit={handleSubmit}>
+          <Input
+            id="weight-kg"
+            label={isHindi ? 'वज़न (किग्रा)' : 'Weight (kg)'}
+            type="number"
+            value={form.weightKg}
+            onChange={(e) => setForm((prev) => ({ ...prev, weightKg: e.target.value }))}
+          />
+          <Button type="submit" disabled={saving}>{saving ? (isHindi ? 'सहेजा जा रहा है...' : 'Saving...') : (isHindi ? 'वज़न सहेजें' : 'Save weight')}</Button>
+        </form>
+
+        {status ? <div className="feature-inline-note">{status}</div> : null}
+        {weekly?.message ? <div className="feature-inline-note">{weekly.message}</div> : null}
+      </section>
+
+      {activeChart ? (
+        <div className="trend-modal-backdrop" role="presentation" onClick={() => setActiveChartKey(null)}>
+          <div
+            className="trend-modal-card card"
+            role="dialog"
+            aria-modal="true"
+            aria-label={activeChart.title}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="trend-modal-head">
+              <div>
+                <h3>{activeChart.title}</h3>
+                <p className="muted">{isHindi ? 'पॉइंट पर hover करें और click करके उसे lock करें।' : 'Hover points and click to lock selection.'}</p>
+              </div>
+              <button
+                type="button"
+                className="trend-modal-close"
+                onClick={() => setActiveChartKey(null)}
+                aria-label={isHindi ? 'पॉपअप बंद करें' : 'Close popup'}
+              >
+                ×
+              </button>
+            </div>
+
+            {activeChartProps ? <WeightChart {...activeChartProps} loading={loading} height={340} /> : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
