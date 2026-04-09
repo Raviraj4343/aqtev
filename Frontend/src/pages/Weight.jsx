@@ -175,13 +175,15 @@ export default function Weight(){
       <section className="card trend-header">
         <div className="trend-header-copy">
           <span className="feature-eyebrow">{isHindi ? 'ट्रेंड' : 'Trend'}</span>
-          <h1>{isHindi ? 'प्रगति ट्रैकिंग' : 'Progress tracking'}</h1>
+          <h1>{isHindi ? 'प्रगति ट्रेंड' : 'Progress trends'}</h1>
           <p className="muted">
-            {isHindi ? 'वज़न, कैलोरी, प्रोटीन और कदम के ट्रेंड को एक साफ और प्रोफेशनल दृश्य में देखें।' : 'Track weight, calories, protein, and steps in one clean professional view.'}
+            {isHindi ? 'वज़न, कैलोरी, प्रोटीन और कदम को एक जगह ट्रैक करें।' : 'Track weight, calories, protein, and steps in one place.'}
           </p>
         </div>
         <span className="feature-date-chip">{isHindi ? 'पिछले 30 दिन' : 'Last 30 days'}</span>
       </section>
+
+      <div className="trend-divider" aria-hidden="true" />
 
       <section className="trend-summary-grid">
         {summary.map((item) => (
@@ -193,11 +195,13 @@ export default function Weight(){
         ))}
       </section>
 
+      <div className="trend-divider" aria-hidden="true" />
+
       <section className="card trend-charts-shell">
         <div className="feature-panel-head">
           <div>
             <h3>{isHindi ? 'ट्रेंड चार्ट' : 'Trend charts'}</h3>
-            <p className="muted">{isHindi ? 'किसी भी चार्ट पर क्लिक करें और इंटरैक्टिव पॉइंट्स देखें।' : 'Click any chart for an expanded interactive point view.'}</p>
+            <p className="muted">{isHindi ? 'किसी भी चार्ट पर क्लिक करके विस्तृत दृश्य देखें।' : 'Click any chart to open an expanded view.'}</p>
           </div>
         </div>
 
@@ -256,11 +260,13 @@ export default function Weight(){
         {trend?.message ? <div className="feature-inline-note">{trend.message}</div> : null}
       </section>
 
+      <div className="trend-divider" aria-hidden="true" />
+
       <section className="card trend-quick-log">
         <div className="feature-panel-head">
           <div>
             <h3>{isHindi ? 'त्वरित वज़न लॉग' : 'Quick weight log'}</h3>
-            <p className="muted">{isHindi ? 'आज का वज़न जोड़ें और ट्रेंड तुरंत अपडेट करें।' : 'Add today\'s weight and update your trend instantly.'}</p>
+            <p className="muted">{isHindi ? 'आज का वज़न दर्ज करें।' : 'Log today\'s weight.'}</p>
           </div>
         </div>
 
@@ -291,7 +297,7 @@ export default function Weight(){
             <div className="trend-modal-head">
               <div>
                 <h3>{activeChart.title}</h3>
-                <p className="muted">{isHindi ? 'पॉइंट पर hover करें और click करके उसे lock करें।' : 'Hover points and click to lock selection.'}</p>
+                <p className="muted">{isHindi ? 'पॉइंट पर hover करें और क्लिक से चयन लॉक करें।' : 'Hover points and click to lock selection.'}</p>
               </div>
               <button
                 type="button"

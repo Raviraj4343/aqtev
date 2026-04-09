@@ -679,6 +679,13 @@ h4{
 .trend-metric-clickable:hover{border-color:rgba(15,118,110,0.34);box-shadow:0 16px 34px rgba(6,104,96,0.12);transform:translateY(-2px)}
 .trend-metric-clickable:focus-visible{outline:2px solid var(--color-primary-500);outline-offset:2px}
 
+.trend-metric-grid{align-items:stretch}
+.trend-metric-grid .trend-metric-card{display:flex;flex-direction:column;height:100%}
+.trend-metric-grid .weight-chart{display:flex;flex-direction:column;flex:1}
+.trend-metric-grid .weight-chart .weight-chart-svg{flex:1}
+
+.trend-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(7,89,133,0.2),transparent);margin:2px 0}
+
 .trend-page{gap:16px}
 .trend-header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:22px}
 .trend-header-copy h1{margin:0 0 8px;font-size:clamp(30px,3.3vw,42px);line-height:1.1}
