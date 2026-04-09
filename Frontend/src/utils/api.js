@@ -757,6 +757,10 @@ export function clearRememberedCredentials(){
   try{ localStorage.removeItem(REMEMBERED_AUTH_KEY) }catch{}
 }
 
+export function isNativeApp(){
+  return isNativeRuntime()
+}
+
 export default {
   request,
   // auth
@@ -808,4 +812,5 @@ export default {
   saveRememberedCredentials,
   readRememberedCredentials,
   clearRememberedCredentials,
+  isNativeApp,
 }

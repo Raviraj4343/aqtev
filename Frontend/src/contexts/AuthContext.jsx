@@ -14,7 +14,16 @@ export function AuthProvider({ children }){
       const res = await api.getMe()
       setUser(res?.data || null)
     }catch(err){
-      setUser(null)
+      try {
+        const refreshed = await api.refreshToken()
+        if (refreshed?.data?.accessToken) {
+          api.saveToken(refreshed.data.accessToken, true)
+        }
+        const me = await api.getMe(refreshed?.data?.accessToken)
+        setUser(me?.data || null)
+      } catch (_refreshErr) {
+        setUser(null)
+      }
     }finally{ setLoading(false) }
   }
 
@@ -25,18 +34,21 @@ export function AuthProvider({ children }){
 
   const login = async (payload, options = {})=>{
     const rememberMe = Boolean(options?.rememberMe)
+    const persistSession = rememberMe || api.isNativeApp?.()
     const res = await api.login(payload)
     // Save access token (backend also sets cookies). This helps dev when cookies are blocked for cross-origin.
-    try{ if (res?.data?.accessToken) api.saveToken(res.data.accessToken, rememberMe) }catch(e){}
+    try{ if (res?.data?.accessToken) api.saveToken(res.data.accessToken, persistSession) }catch(e){}
 
     // Apply user state immediately so UI can continue without waiting for another roundtrip.
     const immediateUser = api.normalizeUser(res?.data?.user || null)
     setUser(immediateUser)
 
-    if (rememberMe) {
+    if (persistSession) {
       api.saveRememberedUser(immediateUser || { email: payload?.email })
-      if (payload?.email && payload?.password) {
+      if (rememberMe && payload?.email && payload?.password) {
         api.saveRememberedCredentials({ email: payload.email, password: payload.password })
+      } else {
+        api.clearRememberedCredentials()
       }
       setRememberedUser(api.readRememberedUser())
     } else {
@@ -51,7 +63,7 @@ export function AuthProvider({ children }){
         const hydrated = me?.data || null
         if (!hydrated) return
         setUser(hydrated)
-        if (rememberMe) {
+        if (persistSession) {
           api.saveRememberedUser(hydrated)
           setRememberedUser(api.readRememberedUser())
         }
