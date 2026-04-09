@@ -1,35 +1,50 @@
 import React, { useMemo, useState } from 'react'
 
-export default function WeightChart({ data = [], loading = false }){
-  const [activePointId, setActivePointId] = useState(null)
+const formatMetricValue = (value, decimals = 1) => {
+  if (!Number.isFinite(Number(value))) return '-'
+  const numeric = Number(value)
+  return decimals > 0 ? numeric.toFixed(decimals) : String(Math.round(numeric))
+}
+
+export default function WeightChart({
+  data = [],
+  loading = false,
+  metricKey = 'weightKg',
+  unit = 'kg',
+  seriesLabel = 'Weight',
+  emptyText = 'No data yet.',
+  decimals = 1,
+  height = 250,
+}){
+  const [hoveredPointId, setHoveredPointId] = useState(null)
+  const [selectedPointId, setSelectedPointId] = useState(null)
 
   const normalized = useMemo(() => (
     (Array.isArray(data) ? data : [])
       .map((entry, index) => {
-        const value = Number(entry?.weightKg)
+        const value = Number(entry?.[metricKey])
         if (!Number.isFinite(value)) return null
         return {
           id: entry?._id || `${entry?.date || 'day'}-${index}`,
           date: String(entry?.date || ''),
-          weightKg: value,
+          value,
         }
       })
       .filter(Boolean)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  ), [data])
+  ), [data, metricKey])
 
   if (loading) return <div className="muted">Loading chart...</div>
-  if (!data || data.length === 0) return <div className="muted">No weight data yet.</div>
-  if (!normalized.length) return <div className="muted">No weight data yet.</div>
+  if (!data || data.length === 0) return <div className="muted">{emptyText}</div>
+  if (!normalized.length) return <div className="muted">{emptyText}</div>
 
   const width = 720
-  const height = 250
   const padding = { top: 12, right: 12, bottom: 28, left: 12 }
   const innerWidth = width - padding.left - padding.right
   const innerHeight = height - padding.top - padding.bottom
 
-  const minWeight = Math.min(...normalized.map((point) => point.weightKg))
-  const maxWeight = Math.max(...normalized.map((point) => point.weightKg))
+  const minWeight = Math.min(...normalized.map((point) => point.value))
+  const maxWeight = Math.max(...normalized.map((point) => point.value))
   const range = maxWeight - minWeight
   const pad = range < 0.001 ? 0.8 : range * 0.18
   const paddedMin = minWeight - pad
@@ -46,7 +61,7 @@ export default function WeightChart({ data = [], loading = false }){
   const points = normalized.map((point, index) => ({
     ...point,
     x: getX(index),
-    y: getY(point.weightKg),
+    y: getY(point.value),
   }))
 
   const polylinePoints = points.map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(' ')
@@ -58,15 +73,22 @@ export default function WeightChart({ data = [], loading = false }){
   }
 
   const latestPoint = points[points.length - 1]
-  const activePoint = points.find((point) => point.id === activePointId) || latestPoint
+  const activePoint =
+    points.find((point) => point.id === selectedPointId)
+    || points.find((point) => point.id === hoveredPointId)
+    || latestPoint
 
   const verticalGridLines = 8
   const horizontalGridLines = 5
   const firstDate = points[0]?.date
   const lastDate = points[points.length - 1]?.date
 
+  const handlePointToggle = (pointId) => {
+    setSelectedPointId((prev) => (prev === pointId ? null : pointId))
+  }
+
   return (
-    <div className="weight-chart simple" role="img" aria-label="Weight trend line chart">
+    <div className="weight-chart simple" role="img" aria-label={`${seriesLabel} trend line chart`}>
       <svg viewBox={`0 0 ${width} ${height}`} className="weight-chart-svg" preserveAspectRatio="xMidYMid meet">
         {Array.from({ length: horizontalGridLines }).map((_, index) => {
           const y = padding.top + (index / (horizontalGridLines - 1)) * innerHeight
@@ -81,9 +103,30 @@ export default function WeightChart({ data = [], loading = false }){
         <polyline className="weight-line" points={polylinePoints} />
 
         {points.map((point) => (
-          <g key={point.id} onMouseEnter={() => setActivePointId(point.id)} onFocus={() => setActivePointId(point.id)}>
-            <circle className={`weight-point ${activePoint.id === point.id ? 'active' : ''}`} cx={point.x} cy={point.y} r={activePoint.id === point.id ? 5.6 : 4.2} />
-            <title>{`${formatDate(point.date)}: ${point.weightKg} kg`}</title>
+          <g
+            key={point.id}
+            onMouseEnter={() => setHoveredPointId(point.id)}
+            onMouseLeave={() => setHoveredPointId(null)}
+            onFocus={() => setHoveredPointId(point.id)}
+            onBlur={() => setHoveredPointId(null)}
+            onClick={() => handlePointToggle(point.id)}
+            tabIndex={0}
+            role="button"
+            aria-label={`${seriesLabel} ${formatDate(point.date)} ${formatMetricValue(point.value, decimals)} ${unit}`}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                handlePointToggle(point.id)
+              }
+            }}
+          >
+            <circle
+              className={`weight-point ${activePoint.id === point.id ? 'active' : ''} ${hoveredPointId === point.id ? 'hovered' : ''} ${selectedPointId === point.id ? 'selected' : ''}`}
+              cx={point.x}
+              cy={point.y}
+              r={activePoint.id === point.id ? 5.6 : 4.2}
+            />
+            <title>{`${formatDate(point.date)}: ${formatMetricValue(point.value, decimals)} ${unit}`}</title>
           </g>
         ))}
 
@@ -93,7 +136,7 @@ export default function WeightChart({ data = [], loading = false }){
 
       <div className="weight-chart-foot">
         <span>{formatDate(activePoint.date)}</span>
-        <strong>{Number(activePoint.weightKg).toFixed(1)} kg</strong>
+        <strong>{formatMetricValue(activePoint.value, decimals)} {unit}</strong>
       </div>
     </div>
   )
