@@ -6,7 +6,8 @@
     "dev": "node ./node_modules/vite/bin/vite.js",
     "build": "node node_modules/vite/bin/vite.js build",
     "preview": "node ./node_modules/vite/bin/vite.js preview",
-    "screenshots": "node scripts/screenshot.js"
+    "screenshots": "node scripts/screenshot.js",
+    "icons:android": "node scripts/generate-android-icons.cjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.0",
