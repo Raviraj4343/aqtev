@@ -14,7 +14,7 @@ const Forgot = lazy(() => import('./pages/Forgot'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'))
 const DailyLog = lazy(() => import('./pages/DailyLog'))
-const Weight = lazy(() => import('./pages/Weight'))
+const Trend = lazy(() => import('./pages/Weight'))
 const Foods = lazy(() => import('./pages/Foods'))
 const Insights = lazy(() => import('./pages/Insights'))
 const Guide = lazy(() => import('./pages/Guide'))
@@ -55,7 +55,8 @@ export default function App(){
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/dashboard" element={withAuth(<Dashboard />)} />
           <Route path="/daily" element={withAuth(<DailyLog />)} />
-          <Route path="/weight" element={withAuth(<Weight />)} />
+          <Route path="/trend" element={withAuth(<Trend />)} />
+          <Route path="/weight" element={withAuth(<Navigate to="/trend" replace />)} />
           <Route path="/foods" element={withAuth(<Foods />)} />
           <Route path="/insights" element={withAuth(<Insights />)} />
           <Route path="/guide" element={withAuth(<Guide />)} />

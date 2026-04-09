@@ -63,7 +63,7 @@ const authItems = [
     )
   },
   {
-    to: '/weight',
+    to: '/trend',
     label: 'sidebar.weightLabel',
     description: 'sidebar.weightDescription',
     icon: (
