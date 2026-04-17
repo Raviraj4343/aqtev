@@ -57,6 +57,47 @@ const userSchema = new mongoose.Schema(
       select: false,
     },
     emailVerificationExpires: Date,
+    role: {
+      type: String,
+      enum: ["user", "super_admin"],
+      default: "user",
+      index: true,
+    },
+    subscriptionStatus: {
+      type: String,
+      enum: ["none", "active", "expired", "cancelled"],
+      default: "none",
+      index: true,
+    },
+    subscriptionPlanId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SubscriptionPlan",
+      default: null,
+    },
+    subscriptionPlanName: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    subscriptionStartsAt: {
+      type: Date,
+      default: null,
+    },
+    subscriptionExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    subscriptionAmountPaise: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    subscriptionCurrency: {
+      type: String,
+      default: "INR",
+      uppercase: true,
+      trim: true,
+    },
 
     // ── Profile fields (one-time setup) ──
     profileCompleted: {
@@ -127,6 +168,8 @@ userSchema.methods.toJSON = function () {
   delete obj.password;
   delete obj.refreshToken;
   delete obj.avatarPublicId;
+  delete obj.passwordResetToken;
+  delete obj.emailVerificationCode;
   return obj;
 };
 
