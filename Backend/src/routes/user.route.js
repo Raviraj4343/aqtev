@@ -3,6 +3,7 @@ import { body } from "express-validator";
 import userController from "../controllers/user.controller.js";
 const {
   getProfile,
+  getPublicProfile,
   setupProfile,
   updateProfile,
   getHealthStats,
@@ -47,6 +48,7 @@ const profileValidation = [
 
 // ── Routes ──────────────────────────────────────────────
 router.get("/profile", getProfile);
+router.get("/public/:userId", getPublicProfile);
 router.post("/profile", profileValidation, validate, setupProfile);
 router.put("/profile", updateProfile);
 router.post("/profile/avatar", uploadAvatar);

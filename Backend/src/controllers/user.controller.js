@@ -9,6 +9,7 @@ import {
 } from "../utils/HealthCalculation.js";
 import multer from "multer";
 import crypto from "crypto";
+import mongoose from "mongoose";
 
 const avatarUpload = multer({
   storage: multer.memoryStorage(),
@@ -222,6 +223,27 @@ const getProfile = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, req.user, "Profile fetched."));
 });
 
+const getPublicProfile = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new ApiError(400, "Invalid user id.");
+  }
+
+  const profile = await User.findById(userId)
+    .select(
+      "name avatarUrl goal activityLevel dietPreference profileCompleted createdAt"
+    )
+    .lean();
+
+  if (!profile) {
+    throw new ApiError(404, "User profile not found.");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, profile, "Public profile fetched."));
+});
+
 const uploadAvatar = [
   avatarUpload.single("avatar"),
   asyncHandler(async (req, res) => {
@@ -251,5 +273,6 @@ export default {
   updateProfile,
   getHealthStats,
   getProfile,
+  getPublicProfile,
   uploadAvatar,
 };

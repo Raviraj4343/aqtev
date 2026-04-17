@@ -1,5 +1,5 @@
 import express from "express";
-import { protect, requireEmailVerified } from "../middlewares/auth.middleware.js";
+import { protect, requireEmailVerified, requireSuperAdmin } from "../middlewares/auth.middleware.js";
 import postController from "../controllers/post.controller.js";
 import { POST_IMAGES_UPLOAD_LIMIT } from "../constants.js";
 
@@ -12,6 +12,6 @@ router.post("/", postController.imageUpload.array("images", POST_IMAGES_UPLOAD_L
 router.post("/:postId/like", postController.toggleLike);
 router.post("/:postId/comment", postController.addComment);
 router.post("/:postId/view", postController.recordView);
-router.delete("/:postId", postController.deletePost);
+router.delete("/:postId", requireSuperAdmin, postController.deletePost);
 
 export default router;
