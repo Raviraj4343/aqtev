@@ -15,6 +15,7 @@ import foodRoutes from "./routes/food.route.js";
 import dailyLogRoutes from "./routes/dailyLog.route.js";
 import weightLogRoutes from "./routes/weightLog.route.js";
 import insightRoutes from "./routes/insight.route.js";
+import postRoutes from "./routes/post.route.js";
 
 const app = express();
 
@@ -163,6 +164,7 @@ app.use(`${API}/weight`, weightLogRoutes);
 // Backwards-compatible alias used by the frontend (camelCase)
 app.use(`${API}/weightLog`, weightLogRoutes);
 app.use(`${API}/insight`, insightRoutes);
+app.use(`${API}/posts`, postRoutes);
 
 // ── 404 + error handler ────────────────────────────────
 app.use(notFound);

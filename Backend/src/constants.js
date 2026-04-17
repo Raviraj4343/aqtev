@@ -76,3 +76,7 @@ export default {
   MEAL_TYPES,
   COOKIE_OPTIONS,
 };
+
+export const POST_IMAGES_UPLOAD_LIMIT = 10;
+export const POST_IMAGE_MAX_SIZE = 6 * 1024 * 1024; // 6MB
+
