@@ -13,7 +13,8 @@ export default function ConfirmationModal({
   cancelDisabled = false,
   tone = 'default',
   eyebrow,
-  details = []
+  details = [],
+  children = null
 }) {
   useEffect(() => {
     if (!open) return undefined
@@ -62,6 +63,8 @@ export default function ConfirmationModal({
             </div>
           </div>
         ) : null}
+
+        {children ? <div className="confirm-modal-body">{children}</div> : null}
 
         <div className="confirm-modal-actions">
           <Button
