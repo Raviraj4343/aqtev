@@ -711,6 +711,43 @@ export function recordPostView(postId){
   return request(`/posts/${encodeURIComponent(postId)}/view`, { method: 'POST' })
 }
 
+export function deletePost(postId){
+  return request(`/posts/${encodeURIComponent(postId)}`, { method: 'DELETE' })
+}
+
+export function getSubscriptionPlans(query = {}){
+  const qs = new URLSearchParams(query).toString()
+  return request(`/subscriptions/plans${qs ? `?${qs}` : ''}`)
+}
+
+export function createSubscriptionPlan(payload = {}){
+  return request('/subscriptions/plans', { method: 'POST', body: payload })
+}
+
+export function updateSubscriptionPlan(planId, payload = {}){
+  return request(`/subscriptions/plans/${encodeURIComponent(planId)}`, { method: 'PUT', body: payload })
+}
+
+export function setSubscriptionPlanStatus(planId, isActive){
+  return request(`/subscriptions/plans/${encodeURIComponent(planId)}/status`, { method: 'PATCH', body: { isActive: Boolean(isActive) } })
+}
+
+export function deleteSubscriptionPlan(planId){
+  return request(`/subscriptions/plans/${encodeURIComponent(planId)}`, { method: 'DELETE' })
+}
+
+export function createSubscriptionOrder(planId){
+  return request('/subscriptions/create-order', { method: 'POST', body: { planId } })
+}
+
+export function verifySubscriptionPayment(payload = {}){
+  return request('/subscriptions/verify-payment', { method: 'POST', body: payload })
+}
+
+export function getRevenueSummary(){
+  return request('/subscriptions/revenue')
+}
+
 // Simple local token helpers (optional — backend uses cookies)
 export function saveToken(token, remember = true){
   if (!token) return
@@ -854,6 +891,15 @@ export default {
   togglePostLike,
   addPostComment,
   recordPostView,
+  deletePost,
+  getSubscriptionPlans,
+  createSubscriptionPlan,
+  updateSubscriptionPlan,
+  setSubscriptionPlanStatus,
+  deleteSubscriptionPlan,
+  createSubscriptionOrder,
+  verifySubscriptionPayment,
+  getRevenueSummary,
   // tokens
   saveToken,
   readToken,

@@ -91,6 +91,16 @@ const authItems = [
         <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z" />
       </svg>
     )
+  },
+  {
+    to: '/admin',
+    customLabel: 'Admin',
+    customDescription: 'Manage plans and revenue',
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2 4 5v6c0 5 3.4 9.4 8 10.8C16.6 20.4 20 16 20 11V5l-8-3Zm0 5a2.5 2.5 0 1 1-2.5 2.5A2.5 2.5 0 0 1 12 7Zm0 11c-1.9 0-3.6-.78-4.84-2.03A6.3 6.3 0 0 1 12 13.9a6.3 6.3 0 0 1 4.84 2.07A6.84 6.84 0 0 1 12 18Z" />
+      </svg>
+    )
   }
 ]
 
@@ -106,10 +116,24 @@ export default function Sidebar({ isOpen = false, onClose }){
   const [liveError, setLiveError] = React.useState('')
   const chatEndRef = React.useRef(null)
 
+  const hasPremiumAccess = React.useMemo(() => {
+    if (!user) return false
+    if (user.role === 'super_admin') return true
+    if (user.subscriptionStatus !== 'active') return false
+    if (!user.subscriptionExpiresAt) return true
+    return new Date(user.subscriptionExpiresAt).getTime() > Date.now()
+  }, [user])
+
   const cls = ['sidebar']
   if (!isOpen) cls.push('closed')
 
-  const visibleItems = user ? [...baseItems, ...authItems] : baseItems
+  const visibleItems = user
+    ? [...baseItems, ...authItems.filter((item) => {
+      if (item.to === '/admin') return user?.role === 'super_admin'
+      if (item.to !== '/guide' && item.to !== '/trend') return true
+      return hasPremiumAccess
+    })]
+    : baseItems
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -206,8 +230,8 @@ export default function Sidebar({ isOpen = false, onClose }){
               >
                 <span className="nav-item-icon">{item.icon}</span>
                 <span className="nav-item-copy">
-                  <span className="nav-item-label">{t(item.label)}</span>
-                  <span className="nav-item-description">{t(item.description)}</span>
+                  <span className="nav-item-label">{item.customLabel || t(item.label)}</span>
+                  <span className="nav-item-description">{item.customDescription || t(item.description)}</span>
                 </span>
               </NavLink>
             ))}

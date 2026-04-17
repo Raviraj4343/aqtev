@@ -20,11 +20,36 @@ const Insights = lazy(() => import('./pages/Insights'))
 const Guide = lazy(() => import('./pages/Guide'))
 const GuestNutritionCheck = lazy(() => import('./pages/GuestNutritionCheck'))
 const Community = lazy(() => import('./pages/Community'))
+const Admin = lazy(() => import('./pages/Admin'))
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth()
   if (loading) return null
   if (!user) return <Navigate to="/" replace />
+  return children
+}
+
+function hasPremiumAccess(user) {
+  if (!user) return false
+  if (user.role === 'super_admin') return true
+  if (user.subscriptionStatus !== 'active') return false
+  if (!user.subscriptionExpiresAt) return true
+  return new Date(user.subscriptionExpiresAt).getTime() > Date.now()
+}
+
+function RequirePremium({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return null
+  if (!user) return <Navigate to="/signin" replace />
+  if (!hasPremiumAccess(user)) return <Navigate to="/profile?premium=required" replace />
+  return children
+}
+
+function RequireSuperAdmin({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return null
+  if (!user) return <Navigate to="/signin" replace />
+  if (user.role !== 'super_admin') return <Navigate to="/dashboard" replace />
   return children
 }
 
@@ -56,13 +81,14 @@ export default function App(){
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/dashboard" element={withAuth(<Dashboard />)} />
           <Route path="/daily" element={withAuth(<DailyLog />)} />
-          <Route path="/trend" element={withAuth(<Trend />)} />
           <Route path="/weight" element={withAuth(<Navigate to="/trend" replace />)} />
           <Route path="/foods" element={withAuth(<Foods />)} />
           <Route path="/insights" element={withAuth(<Insights />)} />
-          <Route path="/guide" element={withAuth(<Guide />)} />
+          <Route path="/guide" element={withAuth(<RequirePremium><Guide /></RequirePremium>)} />
           <Route path="/community" element={withAuth(<Community />)} />
           <Route path="/posts" element={withAuth(<Community />)} />
+          <Route path="/trend" element={withAuth(<RequirePremium><Trend /></RequirePremium>)} />
+          <Route path="/admin" element={withAuth(<RequireSuperAdmin><Admin /></RequireSuperAdmin>)} />
           <Route path="/profile" element={withAuth(<Profile />)} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/design" element={<DesignSystem />} />
