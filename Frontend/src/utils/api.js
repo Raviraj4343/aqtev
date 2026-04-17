@@ -396,6 +396,10 @@ export function getProfile(){
   }))
 }
 
+export function getPublicProfile(userId){
+  return request(`/user/public/${encodeURIComponent(userId)}`)
+}
+
 export function uploadAvatar(file){
   const apiBase = getApiBase()
   const form = new FormData()
@@ -748,6 +752,10 @@ export function getRevenueSummary(){
   return request('/subscriptions/revenue')
 }
 
+export function getMySubscriptionPayments(){
+  return request('/subscriptions/my-payments')
+}
+
 // Simple local token helpers (optional — backend uses cookies)
 export function saveToken(token, remember = true){
   if (!token) return
@@ -859,6 +867,7 @@ export default {
   getMe,
   // user
   getProfile,
+  getPublicProfile,
   uploadAvatar,
   createPost,
   setupProfile,
@@ -900,6 +909,7 @@ export default {
   createSubscriptionOrder,
   verifySubscriptionPayment,
   getRevenueSummary,
+  getMySubscriptionPayments,
   // tokens
   saveToken,
   readToken,

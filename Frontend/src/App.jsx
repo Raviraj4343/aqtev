@@ -5,6 +5,7 @@ import { useAuth } from './contexts/AuthContext'
 
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Profile = lazy(() => import('./pages/Profile'))
+const PublicProfile = lazy(() => import('./pages/PublicProfile'))
 const Auth = lazy(() => import('./pages/Auth'))
 const Landing = lazy(() => import('./pages/Landing'))
 const SignIn = lazy(() => import('./pages/SignIn'))
@@ -21,6 +22,7 @@ const Guide = lazy(() => import('./pages/Guide'))
 const GuestNutritionCheck = lazy(() => import('./pages/GuestNutritionCheck'))
 const Community = lazy(() => import('./pages/Community'))
 const Admin = lazy(() => import('./pages/Admin'))
+const Subscriptions = lazy(() => import('./pages/Subscriptions'))
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth()
@@ -41,7 +43,7 @@ function RequirePremium({ children }) {
   const { user, loading } = useAuth()
   if (loading) return null
   if (!user) return <Navigate to="/signin" replace />
-  if (!hasPremiumAccess(user)) return <Navigate to="/profile?premium=required" replace />
+  if (!hasPremiumAccess(user)) return <Navigate to="/subscriptions?required=1" replace />
   return children
 }
 
@@ -87,9 +89,11 @@ export default function App(){
           <Route path="/guide" element={withAuth(<RequirePremium><Guide /></RequirePremium>)} />
           <Route path="/community" element={withAuth(<Community />)} />
           <Route path="/posts" element={withAuth(<Community />)} />
+          <Route path="/subscriptions" element={withAuth(<Subscriptions />)} />
           <Route path="/trend" element={withAuth(<RequirePremium><Trend /></RequirePremium>)} />
           <Route path="/admin" element={withAuth(<RequireSuperAdmin><Admin /></RequireSuperAdmin>)} />
           <Route path="/profile" element={withAuth(<Profile />)} />
+          <Route path="/profile/:userId" element={withAuth(<PublicProfile />)} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/design" element={<DesignSystem />} />
         </Routes>
