@@ -89,6 +89,25 @@ const uploadImageToCloudinary = async (file, userId) => {
   return payload;
 };
 
+const removeImageFromCloudinary = async (publicId) => {
+  if (!publicId) return;
+
+  const { cloudName, apiKey, apiSecret } = getCloudinaryConfig();
+  const timestamp = Math.floor(Date.now() / 1000);
+  const signature = signCloudinaryParams({ public_id: publicId, timestamp }, apiSecret);
+
+  const form = new FormData();
+  form.append("public_id", publicId);
+  form.append("api_key", apiKey);
+  form.append("timestamp", String(timestamp));
+  form.append("signature", signature);
+
+  await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`, {
+    method: "POST",
+    body: form,
+  }).catch(() => {});
+};
+
 const populatePostQuery = (query) =>
   query.populate("author", "name avatarUrl goal activityLevel dietPreference").populate(
     "comments.author",
@@ -239,6 +258,24 @@ const recordView = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, toPostPayload(post, req.user._id), "Post view recorded."));
 });
 
+const deletePost = asyncHandler(async (req, res) => {
+  if (req.user?.role !== "super_admin") {
+    throw new ApiError(403, "Only super-admin can delete posts.");
+  }
+
+  const post = await Post.findById(req.params.postId).select("images");
+  if (!post) throw new ApiError(404, "Post not found.");
+
+  const images = Array.isArray(post.images) ? post.images : [];
+  await Promise.all(images.map((image) => removeImageFromCloudinary(image?.publicId)));
+
+  await Post.deleteOne({ _id: post._id });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { postId: String(post._id) }, "Post deleted successfully."));
+});
+
 export default {
   imageUpload,
   listPosts,
@@ -246,4 +283,5 @@ export default {
   toggleLike,
   addComment,
   recordView,
+  deletePost,
 };
