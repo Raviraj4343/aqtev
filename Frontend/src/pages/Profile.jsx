@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
 import ConfirmationModal from '../components/ConfirmationModal'
@@ -28,8 +30,37 @@ const prettify = (value = '') =>
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase())
 
+const hasPremiumAccess = (user) => {
+  if (!user) return false
+  if (user.role === 'super_admin') return true
+  if (user.subscriptionStatus !== 'active') return false
+  if (!user.subscriptionExpiresAt) return true
+  return new Date(user.subscriptionExpiresAt).getTime() > Date.now()
+}
+
+const loadRazorpayScript = () => new Promise((resolve) => {
+  if (typeof window === 'undefined') return resolve(false)
+  if (window.Razorpay) return resolve(true)
+
+  const existing = document.querySelector('script[data-razorpay-checkout="true"]')
+  if (existing) {
+    existing.addEventListener('load', () => resolve(true), { once: true })
+    existing.addEventListener('error', () => resolve(false), { once: true })
+    return
+  }
+
+  const script = document.createElement('script')
+  script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+  script.async = true
+  script.dataset.razorpayCheckout = 'true'
+  script.onload = () => resolve(true)
+  script.onerror = () => resolve(false)
+  document.body.appendChild(script)
+})
+
 export default function Profile(){
   const { user, refresh } = useAuth() || {}
+  const { search } = useLocation()
   const { language, setLanguage, t } = useLanguage()
   const [avatarFile, setAvatarFile] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
@@ -40,6 +71,14 @@ export default function Profile(){
   const [isEditing, setIsEditing] = useState(false)
   const [status, setStatus] = useState('')
   const [pendingSavePayload, setPendingSavePayload] = useState(null)
+  const [plans, setPlans] = useState([])
+  const [plansLoading, setPlansLoading] = useState(false)
+  const [plansError, setPlansError] = useState('')
+  const [purchasingPlanId, setPurchasingPlanId] = useState('')
+
+  const isSuperAdmin = user?.role === 'super_admin'
+  const isPremium = hasPremiumAccess(user)
+  const premiumRequired = new URLSearchParams(search).get('premium') === 'required'
 
   useEffect(() => {
     if (!user) return
@@ -58,6 +97,23 @@ export default function Profile(){
     })
     setIsEditing(!user.profileCompleted)
   }, [user])
+
+  useEffect(() => {
+    if (!user) return
+
+    setPlansLoading(true)
+    setPlansError('')
+    api.getSubscriptionPlans({})
+      .then((res) => {
+        const list = Array.isArray(res?.data?.plans) ? res.data.plans : []
+        setPlans(list.filter((plan) => plan?.isActive))
+      })
+      .catch((err) => {
+        setPlans([])
+        setPlansError(String(err?.payload?.message || err?.message || 'Unable to load subscription plans.'))
+      })
+      .finally(() => setPlansLoading(false))
+  }, [user?._id])
 
   const validate = (values) => {
     const e = {}
@@ -171,6 +227,71 @@ export default function Profile(){
 
   const handleLanguageToggle = () => {
     setLanguage(language === 'en' ? 'hi' : 'en')
+  }
+
+  const handleBuyPlan = async (plan) => {
+    if (!plan?._id) return
+    if (purchasingPlanId) return
+
+    setPurchasingPlanId(plan._id)
+    setStatus('')
+
+    try {
+      const hasScript = await loadRazorpayScript()
+      if (!hasScript || !window.Razorpay) {
+        throw new Error('Razorpay checkout script failed to load.')
+      }
+
+      const orderRes = await api.createSubscriptionOrder(plan._id)
+      const order = orderRes?.data?.order
+      const razorpayKeyId = orderRes?.data?.razorpayKeyId
+
+      if (!order?.id || !razorpayKeyId) {
+        throw new Error('Unable to initialize payment right now.')
+      }
+
+      await new Promise((resolve, reject) => {
+        const checkout = new window.Razorpay({
+          key: razorpayKeyId,
+          amount: order.amount,
+          currency: order.currency,
+          name: 'FitCek Premium',
+          description: `${plan.name} (${plan.durationDays} days)`,
+          order_id: order.id,
+          prefill: {
+            name: user?.name,
+            email: user?.email,
+          },
+          theme: {
+            color: '#027e9a',
+          },
+          handler: async (response) => {
+            try {
+              await api.verifySubscriptionPayment({
+                planId: plan._id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              })
+              await refresh()
+              setStatus('Premium subscription activated successfully.')
+              resolve(true)
+            } catch (error) {
+              reject(error)
+            }
+          },
+          modal: {
+            ondismiss: () => reject(new Error('Payment cancelled.'))
+          }
+        })
+
+        checkout.open()
+      })
+    } catch (err) {
+      setStatus(String(err?.payload?.message || err?.message || 'Payment was not completed.'))
+    } finally {
+      setPurchasingPlanId('')
+    }
   }
 
   const profileSummary = [
@@ -358,6 +479,66 @@ export default function Profile(){
               </div>
             </section>
           )}
+
+          <section className="profile-subscription-section">
+            <div className="profile-subscription-head">
+              <div>
+                <h3>Premium Subscription</h3>
+                <p className="muted">Guide and Trends are unlocked for premium members.</p>
+              </div>
+            </div>
+
+            {isSuperAdmin ? (
+              <div className="profile-subscription-current">
+                <strong>Super-admin account</strong>
+                <span>Use the dedicated Admin Console for plan and revenue management.</span>
+                <Link to="/admin" className="btn-primary profile-admin-link">Open Admin Console</Link>
+              </div>
+            ) : null}
+
+            {premiumRequired && !isPremium && !isSuperAdmin ? (
+              <div className="profile-premium-alert">Premium subscription is required to access Guide and Trends.</div>
+            ) : null}
+
+            {!isSuperAdmin ? (
+              <div className="profile-subscription-current">
+                <strong>{isPremium ? 'Premium active' : 'Free plan'}</strong>
+                <span>
+                  {isPremium
+                    ? `Plan: ${user?.subscriptionPlanName || 'Premium'}${user?.subscriptionExpiresAt ? ` | Expires: ${new Date(user.subscriptionExpiresAt).toLocaleDateString()}` : ''}`
+                    : 'Upgrade to access Guide and Trends.'}
+                </span>
+              </div>
+            ) : null}
+
+            {!isSuperAdmin && plansLoading ? <p className="muted">Loading plans...</p> : null}
+            {!isSuperAdmin && plansError ? <p className="muted">{plansError}</p> : null}
+
+            {!isSuperAdmin && !plansLoading && plans.length ? (
+              <div className="profile-plan-grid">
+                {plans.map((plan) => {
+                  const amount = Number(plan?.amountPaise || 0) / 100
+                  return (
+                    <article className="profile-plan-card" key={plan._id}>
+                      <h4>{plan.name}</h4>
+                      <p className="muted">{plan.description || 'Premium access plan'}</p>
+                      <strong>{`INR ${amount.toFixed(2)}`}</strong>
+                      <span>{`${plan.durationDays} day${plan.durationDays === 1 ? '' : 's'}`}</span>
+                      <Button
+                        type="button"
+                        disabled={Boolean(purchasingPlanId)}
+                        onClick={() => handleBuyPlan(plan)}
+                      >
+                        {purchasingPlanId === plan._id ? 'Processing...' : 'Buy plan'}
+                      </Button>
+                    </article>
+                  )
+                })}
+              </div>
+            ) : null}
+
+            {!isSuperAdmin && !plansLoading && !plans.length ? <p className="muted">No subscription plans are available yet.</p> : null}
+          </section>
 
           <div className="profile-language-footer">
             <span className="profile-language-footer-label">{t('profile.languagePreference')}</span>
