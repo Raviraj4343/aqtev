@@ -67,6 +67,27 @@ const getPostFameScore = (post = {}) => {
   return likes * 5 + comments * 4 + views
 }
 
+const getAuthorPills = (author = {}, isHindi = false) => {
+  const goalMap = {
+    weight_loss: isHindi ? 'वेट लॉस' : 'Weight loss',
+    muscle_gain: isHindi ? 'Muscle gain' : 'Muscle gain',
+    maintain: isHindi ? 'Maintain' : 'Maintain'
+  }
+  const activityMap = {
+    sedentary: isHindi ? 'लो एक्टिव' : 'Low active',
+    light: isHindi ? 'लाइट एक्टिव' : 'Light active',
+    moderate: isHindi ? 'मॉडरेट' : 'Moderate',
+    active: isHindi ? 'एक्टिव' : 'Active'
+  }
+  const dietMap = {
+    veg: isHindi ? 'Veg' : 'Veg',
+    non_veg: isHindi ? 'Non-veg' : 'Non-veg',
+    mixed: isHindi ? 'Mixed' : 'Mixed'
+  }
+
+  return [goalMap[author.goal], activityMap[author.activityLevel], dietMap[author.dietPreference]].filter(Boolean)
+}
+
 export default function Dashboard(){
   const { language } = useLanguage()
   const isHindi = language === 'hi'
@@ -337,19 +358,38 @@ export default function Dashboard(){
 
           <div className="dashboard-community-card">
             {featuredPost ? (
-              <article className="dashboard-featured-post">
-                <div className="dashboard-featured-post-head">
-                  <strong>{featuredPost.title || (isHindi ? 'ट्रेंडिंग पोस्ट' : 'Trending post')}</strong>
-                  <span>{formatRelativeDate(featuredPost.createdAt, isHindi)}</span>
-                </div>
-                <p>{featuredPost.description || (isHindi ? 'इस पोस्ट को देखें और समुदाय से जुड़ें।' : 'Open this post and engage with the community.')}</p>
-                <div className="dashboard-featured-post-meta">
-                  <span>{featuredPost.author?.name || (isHindi ? 'कम्युनिटी सदस्य' : 'Community member')}</span>
-                  <span>{formatCount(Number(featuredPost.likeCount || 0), isHindi ? 'लाइक' : 'like', !isHindi)}</span>
-                  <span>{formatCount(Number(featuredPost.commentCount || 0), isHindi ? 'कमेंट' : 'comment', !isHindi)}</span>
-                  <span>{formatCount(Number(featuredPost.viewsCount || 0), isHindi ? 'व्यू' : 'view', !isHindi)}</span>
-                </div>
-              </article>
+              <Link to="/posts" className="dashboard-featured-post-link" aria-label={isHindi ? 'पोस्ट खोलें' : 'Open post'}>
+                <article className="dashboard-featured-post">
+                  <div className="dashboard-featured-post-author">
+                    <div className="dashboard-featured-post-avatar" aria-hidden="true">
+                      {featuredPost.author?.avatarUrl ? (
+                        <img src={featuredPost.author.avatarUrl} alt="" />
+                      ) : (
+                        <span>{(featuredPost.author?.name || 'U').charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="dashboard-featured-post-author-copy">
+                      <strong>{featuredPost.author?.name || (isHindi ? 'कम्युनिटी सदस्य' : 'Community member')}</strong>
+                      <div className="dashboard-featured-post-author-pills">
+                        {getAuthorPills(featuredPost.author, isHindi).slice(0, 2).map((pill) => (
+                          <span key={pill}>{pill}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="dashboard-featured-post-head">
+                    <strong>{featuredPost.title || (isHindi ? 'ट्रेंडिंग पोस्ट' : 'Trending post')}</strong>
+                    <span>{formatRelativeDate(featuredPost.createdAt, isHindi)}</span>
+                  </div>
+                  <p>{featuredPost.description || (isHindi ? 'इस पोस्ट को देखें और समुदाय से जुड़ें।' : 'Open this post and engage with the community.')}</p>
+                  <div className="dashboard-featured-post-meta">
+                    <span>{formatCount(Number(featuredPost.likeCount || 0), isHindi ? 'लाइक' : 'like', !isHindi)}</span>
+                    <span>{formatCount(Number(featuredPost.commentCount || 0), isHindi ? 'कमेंट' : 'comment', !isHindi)}</span>
+                    <span>{formatCount(Number(featuredPost.viewsCount || 0), isHindi ? 'व्यू' : 'view', !isHindi)}</span>
+                  </div>
+                </article>
+              </Link>
             ) : (
               <p className="muted">{isHindi ? 'अभी कोई पोस्ट उपलब्ध नहीं है। पहला पोस्ट बनाकर फ़ीड शुरू करें।' : 'No posts are available yet. Publish the first one to start the feed.'}</p>
             )}
