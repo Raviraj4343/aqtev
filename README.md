@@ -43,7 +43,7 @@ It provides real-time tracking, intelligent suggestions, and a clean user experi
 </p>
 
 <p align="center">
-  📦 Version: <b>v1.0</b> &nbsp; | &nbsp; 📱 Platform: <b>Android</b> &nbsp; | &nbsp; ⚡ Size: <b>~5MB</b>
+  📦 Version: <b>v2.0.0</b> &nbsp; | &nbsp; 📱 Platform: <b>Android</b> &nbsp; | &nbsp; ⚡ Size: <b>~5MB</b>
 </p>
 
 ---
