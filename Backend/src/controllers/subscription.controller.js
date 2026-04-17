@@ -7,6 +7,11 @@ import SubscriptionPlan from "../models/subscriptionPlan.model.js";
 import SubscriptionPayment from "../models/subscriptionPayment.model.js";
 import WebhookEvent from "../models/webhookEvent.model.js";
 import User from "../models/user.model.js";
+import {
+  buildReceiptId,
+  verifyRazorpayPaymentSignature,
+  verifyRazorpayWebhookSignature,
+} from "../utils/paymentVerification.js";
 
 const getRazorpayConfig = () => {
   const keyId = process.env.RAZORPAY_KEY_ID;
@@ -22,13 +27,6 @@ const getRazorpayConfig = () => {
 const getRazorpayClient = () => {
   const { keyId, keySecret } = getRazorpayConfig();
   return new Razorpay({ key_id: keyId, key_secret: keySecret });
-};
-
-// Razorpay receipts must be <= 40 chars and URL-safe.
-const buildReceiptId = (userId) => {
-  const tail = String(userId || "").replace(/[^a-zA-Z0-9]/g, "").slice(-8) || "usr";
-  const stamp = Date.now().toString(36);
-  return `sub_${tail}_${stamp}`.slice(0, 40);
 };
 
 const toValidDate = (value) => {
@@ -324,12 +322,14 @@ const verifyPayment = asyncHandler(async (req, res) => {
   if (!payment) throw new ApiError(404, "Payment order not found.");
 
   const { keySecret } = getRazorpayConfig();
-  const digest = crypto
-    .createHmac("sha256", keySecret)
-    .update(`${razorpayOrderId}|${razorpayPaymentId}`)
-    .digest("hex");
+  const signatureValid = verifyRazorpayPaymentSignature({
+    razorpayOrderId,
+    razorpayPaymentId,
+    razorpaySignature,
+    keySecret,
+  });
 
-  if (digest !== razorpaySignature) {
+  if (!signatureValid) {
     payment.status = "failed";
     await payment.save({ validateBeforeSave: false });
     throw new ApiError(400, "Invalid Razorpay signature.");
@@ -370,12 +370,13 @@ const handleRazorpayWebhook = asyncHandler(async (req, res) => {
     : Buffer.from(JSON.stringify(req.body || {}));
 
   const { keySecret } = getRazorpayConfig();
-  const digest = crypto
-    .createHmac("sha256", keySecret)
-    .update(rawBody)
-    .digest("hex");
+  const signatureValid = verifyRazorpayWebhookSignature({
+    rawBody,
+    razorpaySignature: signature,
+    keySecret,
+  });
 
-  if (digest !== signature) {
+  if (!signatureValid) {
     throw new ApiError(401, "Invalid Razorpay webhook signature.");
   }
 
