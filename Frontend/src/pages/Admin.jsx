@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
+import ConfirmationModal from '../components/ConfirmationModal'
 import * as api from '../utils/api'
 
 const EMPTY_PLAN = {
@@ -20,6 +21,7 @@ export default function Admin(){
   const [creating, setCreating] = useState(false)
   const [editingPlanId, setEditingPlanId] = useState('')
   const [busyPlanId, setBusyPlanId] = useState('')
+  const [pendingPlanAction, setPendingPlanAction] = useState(null)
   const [createForm, setCreateForm] = useState(EMPTY_PLAN)
   const [editForm, setEditForm] = useState(EMPTY_PLAN)
 
@@ -117,36 +119,34 @@ export default function Admin(){
 
   const togglePlanStatus = async (plan) => {
     if (!plan?._id || busyPlanId) return
-
-    setBusyPlanId(plan._id)
-    setStatus('')
-
-    try {
-      await api.setSubscriptionPlanStatus(plan._id, !plan.isActive)
-      await loadPlans()
-      setStatus(plan.isActive ? 'Plan deactivated.' : 'Plan activated.')
-    } catch (err) {
-      setStatus(String(err?.payload?.message || err?.message || 'Unable to update plan status.'))
-    } finally {
-      setBusyPlanId('')
-    }
+    setPendingPlanAction({ type: 'status', plan })
   }
 
   const removePlan = async (plan) => {
     if (!plan?._id || busyPlanId) return
+    setPendingPlanAction({ type: 'delete', plan })
+  }
 
-    const shouldDelete = window.confirm(`Delete plan "${plan.name}"? If payments exist, it will be deactivated instead.`)
-    if (!shouldDelete) return
+  const confirmPlanAction = async () => {
+    if (!pendingPlanAction?.plan?._id || busyPlanId) return
 
+    const { plan, type } = pendingPlanAction
     setBusyPlanId(plan._id)
     setStatus('')
 
     try {
-      await api.deleteSubscriptionPlan(plan._id)
-      await Promise.all([loadPlans(), loadRevenue()])
-      setStatus('Plan delete request processed successfully.')
+      if (type === 'delete') {
+        await api.deleteSubscriptionPlan(plan._id)
+        await Promise.all([loadPlans(), loadRevenue()])
+        setStatus('Plan delete request processed successfully.')
+      } else {
+        await api.setSubscriptionPlanStatus(plan._id, !plan.isActive)
+        await loadPlans()
+        setStatus(plan.isActive ? 'Plan deactivated.' : 'Plan activated.')
+      }
+      setPendingPlanAction(null)
     } catch (err) {
-      setStatus(String(err?.payload?.message || err?.message || 'Unable to delete plan.'))
+      setStatus(String(err?.payload?.message || err?.message || 'Unable to process this plan action.'))
     } finally {
       setBusyPlanId('')
     }
@@ -315,6 +315,48 @@ export default function Admin(){
           </div>
         )}
       </Card>
+
+      <ConfirmationModal
+        open={Boolean(pendingPlanAction)}
+        tone={pendingPlanAction?.type === 'delete' ? 'danger' : 'default'}
+        eyebrow="Super Admin"
+        title={
+          pendingPlanAction?.type === 'delete'
+            ? 'Delete plan?'
+            : pendingPlanAction?.plan?.isActive
+              ? 'Deactivate plan?'
+              : 'Activate plan?'
+        }
+        description={
+          pendingPlanAction?.type === 'delete'
+            ? `Delete plan "${pendingPlanAction?.plan?.name || 'this plan'}"? If payments exist, the plan will be deactivated instead.`
+            : pendingPlanAction?.plan?.isActive
+              ? 'This plan will no longer be available for new purchases.'
+              : 'This plan will become available for new purchases.'
+        }
+        confirmLabel={
+          busyPlanId
+            ? 'Processing...'
+            : pendingPlanAction?.type === 'delete'
+              ? 'Delete plan'
+              : pendingPlanAction?.plan?.isActive
+                ? 'Deactivate'
+                : 'Activate'
+        }
+        cancelLabel="Cancel"
+        confirmDisabled={Boolean(busyPlanId)}
+        cancelDisabled={Boolean(busyPlanId)}
+        details={pendingPlanAction?.plan ? [
+          { label: 'Plan', value: pendingPlanAction.plan.name || 'Subscription plan' },
+          { label: 'Amount', value: `INR ${(Number(pendingPlanAction.plan.amountPaise || 0) / 100).toFixed(2)}` },
+          { label: 'Duration', value: `${pendingPlanAction.plan.durationDays} day${pendingPlanAction.plan.durationDays === 1 ? '' : 's'}` }
+        ] : []}
+        onClose={() => {
+          if (busyPlanId) return
+          setPendingPlanAction(null)
+        }}
+        onConfirm={confirmPlanAction}
+      />
     </div>
   )
 }
