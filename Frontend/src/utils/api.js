@@ -425,6 +425,35 @@ export function uploadAvatar(file){
   })
 }
 
+export function createPost({ title, description, images = [] }){
+  const apiBase = getApiBase()
+  const form = new FormData()
+  const token = readToken()
+  const headers = {}
+
+  form.append('title', title)
+  form.append('description', description)
+  images.forEach((file) => form.append('images', file))
+
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  return fetch(`${apiBase}/posts`, {
+    method: 'POST',
+    body: form,
+    credentials: 'include',
+    headers
+  }).then(async (res) => {
+    const data = await res.json().catch(() => null)
+    if (!res.ok) {
+      const err = new Error(data?.message || 'Post creation failed')
+      err.status = res.status
+      err.payload = data
+      throw err
+    }
+    return data
+  })
+}
+
 export function setupProfile(payload){
   return request('/user/profile', { method: 'POST', body: payload }).then((res) => ({
     ...res,
@@ -665,6 +694,23 @@ export function getGuideLiveSuggestion(payload = {}){
     })
 }
 
+export function getPosts(query = {}){
+  const qs = new URLSearchParams(query).toString()
+  return request(`/posts${qs ? `?${qs}` : ''}`)
+}
+
+export function togglePostLike(postId){
+  return request(`/posts/${encodeURIComponent(postId)}/like`, { method: 'POST' })
+}
+
+export function addPostComment(postId, text){
+  return request(`/posts/${encodeURIComponent(postId)}/comment`, { method: 'POST', body: { text } })
+}
+
+export function recordPostView(postId){
+  return request(`/posts/${encodeURIComponent(postId)}/view`, { method: 'POST' })
+}
+
 // Simple local token helpers (optional — backend uses cookies)
 export function saveToken(token, remember = true){
   if (!token) return
@@ -776,6 +822,8 @@ export default {
   getMe,
   // user
   getProfile,
+  uploadAvatar,
+  createPost,
   setupProfile,
   updateProfile,
   getHealthStats,
@@ -802,6 +850,10 @@ export default {
   getWeeklySummary,
   getGuideActionPlan,
   getGuideLiveSuggestion,
+  getPosts,
+  togglePostLike,
+  addPostComment,
+  recordPostView,
   // tokens
   saveToken,
   readToken,

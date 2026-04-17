@@ -53,6 +53,16 @@ const authItems = [
     )
   },
   {
+    to: '/community',
+    label: 'sidebar.communityLabel',
+    description: 'sidebar.communityDescription',
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3a7 7 0 0 1 7 7c0 1.94-.8 3.69-2.09 4.96L18 20l-4.71-1.68A6.98 6.98 0 0 1 12 17a7 7 0 1 1 0-14Zm-3 6v2h6V9H9Zm0 4v2h4v-2H9Z" />
+      </svg>
+    )
+  },
+  {
     to: '/foods',
     label: 'sidebar.foodsLabel',
     description: 'sidebar.foodsDescription',

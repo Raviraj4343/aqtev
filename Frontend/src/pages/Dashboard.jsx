@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import Card from '../components/ui/Card'
 import api from '../utils/api'
 import { useAuth } from '../contexts/AuthContext'
@@ -18,26 +19,9 @@ const getBodyBalanceScore = (bmi) => {
   return clamp(Math.round(100 - Math.abs(numeric - idealBmi) * 12))
 }
 
-const toTitle = (value = '') =>
-  String(value)
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (char) => char.toUpperCase())
-
-const formatTimelineDate = (isoDate, isHindi) => {
-  if (!isoDate) return isHindi ? 'हाल ही में' : 'Recently'
-  const now = new Date()
-  const date = new Date(`${isoDate}T00:00:00`)
-  if (Number.isNaN(date.getTime())) return isoDate
-
-  const dayDiff = Math.floor((now.setHours(0, 0, 0, 0) - date.getTime()) / 86400000)
-  if (dayDiff <= 0) return isHindi ? 'आज' : 'Today'
-  if (dayDiff === 1) return isHindi ? 'कल' : 'Yesterday'
-  return isHindi ? `${dayDiff} दिन पहले` : `${dayDiff}d ago`
-}
-
 const getBmiCategory = (bmi, isHindi) => {
   const numeric = Number(bmi)
-  if (!numeric) return isHindi ? 'प्रोफ़ाइल डेटा की प्रतीक्षा' : 'Awaiting profile data'
+  if (!numeric) return isHindi ? 'प्रोफाइल डेटा की प्रतीक्षा' : 'Awaiting profile data'
   if (numeric < 18.5) return isHindi ? 'कम श्रेणी' : 'Lean range'
   if (numeric < 25) return isHindi ? 'संतुलित श्रेणी' : 'Balanced range'
   if (numeric < 30) return isHindi ? 'बढ़ी हुई श्रेणी' : 'Elevated range'
@@ -54,19 +38,48 @@ const waterToLiters = (value) => {
   return map[value] ?? null
 }
 
+const formatCount = (value = 0, label, pluralize = true) => `${value} ${label}${pluralize && value !== 1 ? 's' : ''}`
+
+const formatRelativeDate = (value, isHindi) => {
+  if (!value) return isHindi ? 'अभी' : 'Just now'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return isHindi ? 'अभी' : 'Just now'
+
+  const diffMs = Date.now() - date.getTime()
+  const diffMinutes = Math.max(0, Math.floor(diffMs / 60000))
+
+  if (diffMinutes < 1) return isHindi ? 'अभी' : 'Just now'
+  if (diffMinutes < 60) return isHindi ? `${diffMinutes}मि पहले` : `${diffMinutes}m ago`
+
+  const diffHours = Math.floor(diffMinutes / 60)
+  if (diffHours < 24) return isHindi ? `${diffHours}घं पहले` : `${diffHours}h ago`
+
+  const diffDays = Math.floor(diffHours / 24)
+  if (diffDays < 7) return isHindi ? `${diffDays}दिन पहले` : `${diffDays}d ago`
+
+  return date.toLocaleDateString()
+}
+
+const getPostFameScore = (post = {}) => {
+  const likes = Number(post.likeCount || 0)
+  const comments = Number(post.commentCount || 0)
+  const views = Number(post.viewsCount || 0)
+  return likes * 5 + comments * 4 + views
+}
+
 export default function Dashboard(){
   const { language } = useLanguage()
   const isHindi = language === 'hi'
   const { user } = useAuth() || {}
   const [stats, setStats] = useState({ bmi: null, requiredCalories: null, requiredProtein: null })
   const [today, setToday] = useState({ calories: 0, protein: 0 })
-  const [activityItems, setActivityItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeBoostMetric, setActiveBoostMetric] = useState(null)
   const [boostFoodsByNutrient, setBoostFoodsByNutrient] = useState({})
   const [boostLoading, setBoostLoading] = useState(false)
   const [boostError, setBoostError] = useState('')
   const [summaryRows, setSummaryRows] = useState([])
+  const [featuredPost, setFeaturedPost] = useState(null)
 
   const buildSummaryRows = (logs = []) => {
     const loggedDays = logs.length
@@ -116,9 +129,10 @@ export default function Dashboard(){
 
     async function load(){
       try {
-        const [res, todayRes] = await Promise.all([
+        const [res, todayRes, postsRes] = await Promise.all([
           api.getHealthStats(),
-          api.getTodayInsight().catch(() => null)
+          api.getTodayInsight().catch(() => null),
+          api.getPosts().catch(() => null)
         ])
         if (!mounted) return
 
@@ -134,68 +148,25 @@ export default function Dashboard(){
           calories: todayData.calories ?? 0,
           protein: todayData.protein ?? 0
         })
+
+        const posts = Array.isArray(postsRes?.data) ? postsRes.data : []
+        const topPost = posts.length
+          ? [...posts]
+            .sort((a, b) => {
+              const scoreDiff = getPostFameScore(b) - getPostFameScore(a)
+              if (scoreDiff !== 0) return scoreDiff
+              return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+            })[0]
+          : null
+        setFeaturedPost(topPost)
         setLoading(false)
 
-        const [historyRes, weightRes] = await Promise.all([
-          api.getHistoryLogs({ days: 7, summary: 1 }).catch(() => null),
-          api.getWeightHistory({ days: 7 }).catch(() => null)
-        ])
+        const historyRes = await api.getHistoryLogs({ days: 7, summary: 1 }).catch(() => null)
         if (!mounted) return
 
         const logs = Array.isArray(historyRes?.data) ? historyRes.data : []
-        const latestLog = logs[0] || null
-        const weightLogs = Array.isArray(weightRes?.data?.logs) ? weightRes.data.logs : []
-        const latestWeight = weightLogs.length ? weightLogs[weightLogs.length - 1] : null
-
-        const timeline = []
-
-        if (latestLog) {
-          const mealCount = Number(latestLog?.mealItemCount || 0)
-
-          timeline.push({
-            id: `log-${latestLog.date}`,
-            text: isHindi
-              ? `${Math.round(latestLog.totalCalories || 0)} kcal और ${Math.round(latestLog.totalProtein || 0)} ग्राम प्रोटीन लॉग किया${mealCount ? ` (${mealCount} फूड एंट्री)` : ''}।`
-              : `Logged ${Math.round(latestLog.totalCalories || 0)} kcal and ${Math.round(latestLog.totalProtein || 0)} g protein${mealCount ? ` across ${mealCount} food entries` : ''}.`,
-            time: formatTimelineDate(latestLog.date, isHindi)
-          })
-
-          if (latestLog.steps) {
-            timeline.push({
-              id: `steps-${latestLog.date}`,
-              text: isHindi ? `${latestLog.steps.toLocaleString()} कदम रिकॉर्ड किए।` : `Recorded ${latestLog.steps.toLocaleString()} steps.`,
-              time: formatTimelineDate(latestLog.date, isHindi)
-            })
-          }
-
-          if (latestLog.sleepHours !== null && latestLog.sleepHours !== undefined) {
-            timeline.push({
-              id: `sleep-${latestLog.date}`,
-              text: isHindi ? `${latestLog.sleepHours} घंटे की नींद लॉग की।` : `Logged ${latestLog.sleepHours} hours of sleep.`,
-              time: formatTimelineDate(latestLog.date, isHindi)
-            })
-          }
-
-          if (latestLog.waterIntake) {
-            timeline.push({
-              id: `water-${latestLog.date}`,
-              text: isHindi ? `पानी का सेवन ${toTitle(latestLog.waterIntake)} सेट किया गया।` : `Water intake set to ${toTitle(latestLog.waterIntake)}.`,
-              time: formatTimelineDate(latestLog.date, isHindi)
-            })
-          }
-        }
-
-        if (latestWeight?.weightKg) {
-          timeline.push({
-            id: `weight-${latestWeight.date}`,
-            text: isHindi ? `वज़न ${latestWeight.weightKg} किग्रा अपडेट किया गया।` : `Weight updated to ${latestWeight.weightKg} kg.`,
-            time: formatTimelineDate(latestWeight.date, isHindi)
-          })
-        }
-
-        setActivityItems(timeline.slice(0, 4))
         setSummaryRows(buildSummaryRows(logs))
-      } catch (e) {
+      } catch {
         // keep graceful empty state
       } finally {
         if (mounted) setLoading(false)
@@ -272,11 +243,12 @@ export default function Dashboard(){
 
     loadBoostFoods()
     return () => { cancelled = true }
-  }, [activeBoostMetric?.nutrient, boostFoodsByNutrient, user?.dietPreference])
+  }, [activeBoostMetric?.nutrient, boostFoodsByNutrient, user?.dietPreference, isHindi])
 
   const boostFoods = activeBoostMetric?.nutrient
     ? (boostFoodsByNutrient[activeBoostMetric.nutrient] || [])
     : []
+  const visibleSummaryRows = summaryRows.length ? summaryRows : buildSummaryRows([])
 
   return (
     <div className="page dashboard dashboard-page">
@@ -285,7 +257,7 @@ export default function Dashboard(){
           <span className="dashboard-eyebrow">{isHindi ? 'दैनिक सारांश' : 'Daily overview'}</span>
           <h1>{isHindi ? 'डैशबोर्ड' : 'Dashboard'}</h1>
           <p className="muted">
-            {isHindi ? 'आपके स्वास्थ्य लक्ष्य, प्रोफ़ाइल संकेत और आज किन चीज़ों पर ध्यान दें, इसका साफ़ दृश्य।' : 'A clean view of your health targets, profile signals, and what deserves attention today.'}
+            {isHindi ? 'आपके स्वास्थ्य लक्ष्य, प्रोफाइल संकेत और आज किन चीज़ों पर ध्यान दें, इसका साफ़ दृश्य।' : 'A clean view of your health targets, profile signals, and what deserves attention today.'}
           </p>
 
           <div className="dashboard-hero-badges">
@@ -353,44 +325,48 @@ export default function Dashboard(){
         ))}
       </section>
 
-      <section className="dashboard-grid dashboard-layout">
-        <Card className="activity-card dashboard-panel">
+      <section className="dashboard-lower-layout">
+        <Card className="dashboard-panel dashboard-main-focus-card">
           <div className="dashboard-panel-header">
             <div>
-              <h3>{isHindi ? 'हाल की गतिविधि' : 'Recent activity'}</h3>
-              <p className="muted">{isHindi ? 'आपकी नवीनतम लॉग एक ही जगह।' : 'Your latest logs in one place.'}</p>
+              <h3>{isHindi ? 'हेल्थ पोस्ट' : 'Health Posts'}</h3>
+              <p className="muted">{isHindi ? 'कम्युनिटी पोस्ट और हेल्थ अपडेट्स तक जल्दी पहुँच।' : 'Quick access to community posts and health updates.'}</p>
             </div>
+            <Link to="/posts" className="btn-ghost dashboard-posts-header-link">{isHindi ? 'पोस्ट देखें' : 'View posts'}</Link>
           </div>
 
-          <div className="dashboard-callout">
-            <strong>{isHindi ? 'टाइमलाइन' : 'Timeline'}</strong>
-            {activityItems.length ? (
-              <ul className="activity-list">
-                {activityItems.map((item) => (
-                  <li key={item.id} className="activity-item">
-                    <div className="activity-text">{item.text}</div>
-                    <div className="activity-time">{item.time}</div>
-                  </li>
-                ))}
-              </ul>
+          <div className="dashboard-community-card">
+            {featuredPost ? (
+              <article className="dashboard-featured-post">
+                <div className="dashboard-featured-post-head">
+                  <strong>{featuredPost.title || (isHindi ? 'ट्रेंडिंग पोस्ट' : 'Trending post')}</strong>
+                  <span>{formatRelativeDate(featuredPost.createdAt, isHindi)}</span>
+                </div>
+                <p>{featuredPost.description || (isHindi ? 'इस पोस्ट को देखें और समुदाय से जुड़ें।' : 'Open this post and engage with the community.')}</p>
+                <div className="dashboard-featured-post-meta">
+                  <span>{featuredPost.author?.name || (isHindi ? 'कम्युनिटी सदस्य' : 'Community member')}</span>
+                  <span>{formatCount(Number(featuredPost.likeCount || 0), isHindi ? 'लाइक' : 'like', !isHindi)}</span>
+                  <span>{formatCount(Number(featuredPost.commentCount || 0), isHindi ? 'कमेंट' : 'comment', !isHindi)}</span>
+                  <span>{formatCount(Number(featuredPost.viewsCount || 0), isHindi ? 'व्यू' : 'view', !isHindi)}</span>
+                </div>
+              </article>
             ) : (
-              <p className="muted">
-                {isHindi ? 'अभी कोई हाल की गतिविधि उपलब्ध नहीं है। लॉग शुरू करने पर टाइमलाइन यहाँ दिखेगी।' : 'No recent activity is available yet. Once you start logging meals, weight, or daily data, your timeline will appear here.'}
-              </p>
+              <p className="muted">{isHindi ? 'अभी कोई पोस्ट उपलब्ध नहीं है। पहला पोस्ट बनाकर फ़ीड शुरू करें।' : 'No posts are available yet. Publish the first one to start the feed.'}</p>
             )}
           </div>
         </Card>
 
-        <Card className="subs-card dashboard-panel dashboard-profile-panel">
+        <div className="dashboard-right-rail">
+          <Card className="subs-card dashboard-panel dashboard-profile-panel dashboard-summary-rail-card">
           <div className="dashboard-panel-header">
             <div>
               <h3>{isHindi ? 'सारांश' : 'Summary'}</h3>
-              <p className="muted">{isHindi ? 'हाल के दैनिक औसत एक नज़र में।' : 'Your recent daily averages at a glance.'}</p>
+              <p className="muted">{isHindi ? 'दाहिनी ओर एक कॉम्पैक्ट स्नैपशॉट।' : 'A compact snapshot on the right side.'}</p>
             </div>
           </div>
 
-          <div className="dashboard-summary-list dashboard-summary-metric-list">
-            {summaryRows.map((row) => (
+          <div className="dashboard-summary-list dashboard-summary-metric-list dashboard-summary-compact-list">
+            {visibleSummaryRows.map((row) => (
               <div className="dashboard-summary-item dashboard-summary-metric" key={row.label}>
                 <div>
                   <strong>{row.label}</strong>
@@ -400,7 +376,9 @@ export default function Dashboard(){
               </div>
             ))}
           </div>
-        </Card>
+          </Card>
+
+        </div>
       </section>
 
       {activeBoostMetric ? (

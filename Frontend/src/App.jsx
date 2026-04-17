@@ -19,6 +19,7 @@ const Foods = lazy(() => import('./pages/Foods'))
 const Insights = lazy(() => import('./pages/Insights'))
 const Guide = lazy(() => import('./pages/Guide'))
 const GuestNutritionCheck = lazy(() => import('./pages/GuestNutritionCheck'))
+const Community = lazy(() => import('./pages/Community'))
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth()
@@ -60,6 +61,8 @@ export default function App(){
           <Route path="/foods" element={withAuth(<Foods />)} />
           <Route path="/insights" element={withAuth(<Insights />)} />
           <Route path="/guide" element={withAuth(<Guide />)} />
+          <Route path="/community" element={withAuth(<Community />)} />
+          <Route path="/posts" element={withAuth(<Community />)} />
           <Route path="/profile" element={withAuth(<Profile />)} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/design" element={<DesignSystem />} />
