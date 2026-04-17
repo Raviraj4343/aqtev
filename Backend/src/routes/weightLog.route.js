@@ -10,12 +10,13 @@ import {
   protect,
   requireEmailVerified,
   requireProfileComplete,
+  requirePremium,
 } from "../middlewares/auth.middleware.js";
 import validate from "../middlewares/validate.middleware.js";
 
 const router = express.Router();
 
-router.use(protect, requireEmailVerified, requireProfileComplete);
+router.use(protect, requireEmailVerified, requireProfileComplete, requirePremium);
 
 const weightValidation = [
   body("weightKg")

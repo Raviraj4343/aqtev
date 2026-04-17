@@ -12,5 +12,6 @@ router.post("/", postController.imageUpload.array("images", POST_IMAGES_UPLOAD_L
 router.post("/:postId/like", postController.toggleLike);
 router.post("/:postId/comment", postController.addComment);
 router.post("/:postId/view", postController.recordView);
+router.delete("/:postId", postController.deletePost);
 
 export default router;

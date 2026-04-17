@@ -16,6 +16,10 @@ import dailyLogRoutes from "./routes/dailyLog.route.js";
 import weightLogRoutes from "./routes/weightLog.route.js";
 import insightRoutes from "./routes/insight.route.js";
 import postRoutes from "./routes/post.route.js";
+import subscriptionRoutes from "./routes/subscription.route.js";
+import subscriptionController from "./controllers/subscription.controller.js";
+
+const API = "/api/v1";
 
 const app = express();
 
@@ -120,6 +124,13 @@ const authLimiter = rateLimit({
   },
 });
 
+// Razorpay webhook must read raw body for signature verification.
+app.post(
+  `${API}/subscriptions/webhook/razorpay`,
+  express.raw({ type: "application/json" }),
+  subscriptionController.handleRazorpayWebhook
+);
+
 // ── Body / cookie parsers ──────────────────────────────
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
@@ -146,8 +157,6 @@ app.get("/health", (_req, res) => {
 });
 
 // ── API Routes ─────────────────────────────────────────
-const API = "/api/v1";
-
 // Apply auth routes without a global limiter; a focused limiter is applied to sensitive endpoints in the route file.
 app.use(`${API}/auth`, authRoutes);
 // Dev-only helpers
@@ -165,6 +174,7 @@ app.use(`${API}/weight`, weightLogRoutes);
 app.use(`${API}/weightLog`, weightLogRoutes);
 app.use(`${API}/insight`, insightRoutes);
 app.use(`${API}/posts`, postRoutes);
+app.use(`${API}/subscriptions`, subscriptionRoutes);
 
 // ── 404 + error handler ────────────────────────────────
 app.use(notFound);

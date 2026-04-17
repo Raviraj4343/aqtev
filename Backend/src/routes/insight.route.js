@@ -9,6 +9,7 @@ import {
   protect,
   requireEmailVerified,
   requireProfileComplete,
+  requirePremium,
 } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
@@ -16,7 +17,7 @@ router.use(protect, requireEmailVerified, requireProfileComplete);
 
 router.get("/today", getTodayInsight);
 router.get("/summary", getWeeklySummary);
-router.post("/action-plan", getActionPlan);
-router.post("/live-suggestion", getLiveSuggestion);
+router.post("/action-plan", requirePremium, getActionPlan);
+router.post("/live-suggestion", requirePremium, getLiveSuggestion);
 
 export default router;
