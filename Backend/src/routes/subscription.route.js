@@ -1,5 +1,6 @@
 import express from "express";
 import { body } from "express-validator";
+import rateLimit from "express-rate-limit";
 import subscriptionController from "../controllers/subscription.controller.js";
 import {
   protect,
@@ -9,6 +10,17 @@ import {
 import validate from "../middlewares/validate.middleware.js";
 
 const router = express.Router();
+
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 25,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many payment requests from this IP. Please try again shortly.",
+  },
+});
 
 router.use(protect, requireEmailVerified);
 
@@ -46,6 +58,7 @@ router.delete(
 
 router.post(
   "/create-order",
+  paymentLimiter,
   body("planId").notEmpty().withMessage("planId is required"),
   validate,
   subscriptionController.createOrder
@@ -53,6 +66,7 @@ router.post(
 
 router.post(
   "/verify-payment",
+  paymentLimiter,
   body("planId").notEmpty().withMessage("planId is required"),
   body("razorpayOrderId").notEmpty().withMessage("razorpayOrderId is required"),
   body("razorpayPaymentId").notEmpty().withMessage("razorpayPaymentId is required"),

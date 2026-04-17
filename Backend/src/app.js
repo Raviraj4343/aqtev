@@ -3,6 +3,7 @@ import helmet from "helmet";
 import cors from "cors";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
+import hpp from "hpp";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import { notFound, errorHandler } from "./middlewares/error.middleware.js";
@@ -118,6 +119,8 @@ const globalLimiter = rateLimit({
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: {
     success: false,
     message: "Too many auth attempts. Please wait 15 minutes.",
@@ -135,6 +138,7 @@ app.post(
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cookieParser());
+app.use(hpp());
 
 // ── Logging ────────────────────────────────────────────
 if (process.env.NODE_ENV === "development") {
@@ -157,8 +161,8 @@ app.get("/health", (_req, res) => {
 });
 
 // ── API Routes ─────────────────────────────────────────
-// Apply auth routes without a global limiter; a focused limiter is applied to sensitive endpoints in the route file.
-app.use(`${API}/auth`, authRoutes);
+// Add auth limiter at route group level to reduce brute-force surface.
+app.use(`${API}/auth`, authLimiter, authRoutes);
 // Dev-only helpers
 app.use(`${API}/dev`, devRoutes);
 // Apply global limiter to all non-auth routes (avoid throttling auth endpoints like /me during development)
