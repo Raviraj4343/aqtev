@@ -61,6 +61,8 @@ router.post(
   subscriptionController.verifyPayment
 );
 
+router.get("/my-payments", subscriptionController.getMyPayments);
+
 router.get("/revenue", requireSuperAdmin, subscriptionController.getRevenue);
 
 export default router;
