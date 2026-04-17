@@ -9,6 +9,16 @@ FitCek is a full-stack health tracking platform focused on practical daily use: 
 ![Database](https://img.shields.io/badge/Database-MongoDB-47A248?logo=mongodb&logoColor=white)
 ![Payments](https://img.shields.io/badge/Payments-Razorpay-0C2451)
 ![Security](https://img.shields.io/badge/Security-RateLimit%2BHPP-2E7D32)
+![Auth](https://img.shields.io/badge/Auth-JWT-000000?logo=jsonwebtokens&logoColor=white)
+![Realtime](https://img.shields.io/badge/Realtime-Socket.IO-010101?logo=socket.io&logoColor=white)
+![ODM](https://img.shields.io/badge/ODM-Mongoose-880000?logo=mongoose&logoColor=white)
+![AI](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?logo=google&logoColor=white)
+![Email](https://img.shields.io/badge/Email-Brevo-0B996E)
+![Media](https://img.shields.io/badge/Media-Cloudinary-3448C5?logo=cloudinary&logoColor=white)
+![Mobile](https://img.shields.io/badge/Mobile-Capacitor-119EFF?logo=capacitor&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
+![Frontend%20Hosting](https://img.shields.io/badge/Frontend%20Hosting-Vercel-000000?logo=vercel&logoColor=white)
+![Backend%20Hosting](https://img.shields.io/badge/Backend%20Hosting-Render-46E3B7)
 
 ## Live URLs
 
