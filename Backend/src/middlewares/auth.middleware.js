@@ -34,6 +34,16 @@ const protect = asyncHandler(async (req, _res, next) => {
     throw new ApiError(401, "User no longer exists.");
   }
 
+  if (
+    user.role !== "super_admin" &&
+    user.subscriptionStatus === "active" &&
+    user.subscriptionExpiresAt &&
+    user.subscriptionExpiresAt.getTime() <= Date.now()
+  ) {
+    user.subscriptionStatus = "expired";
+    await user.save({ validateBeforeSave: false });
+  }
+
   req.user = user;
   next();
 });
@@ -52,4 +62,33 @@ const requireProfileComplete = asyncHandler(async (req, _res, next) => {
   next();
 });
 
-export { protect, requireEmailVerified, requireProfileComplete };
+const hasPremiumAccess = (user) => {
+  if (!user) return false;
+  if (user.role === "super_admin") return true;
+  if (user.subscriptionStatus !== "active") return false;
+  if (!user.subscriptionExpiresAt) return true;
+  return new Date(user.subscriptionExpiresAt).getTime() > Date.now();
+};
+
+const requirePremium = asyncHandler(async (req, _res, next) => {
+  if (!hasPremiumAccess(req.user)) {
+    throw new ApiError(403, "Premium subscription is required for this feature.");
+  }
+  next();
+});
+
+const requireSuperAdmin = asyncHandler(async (req, _res, next) => {
+  if (req.user?.role !== "super_admin") {
+    throw new ApiError(403, "Super-admin access is required.");
+  }
+  next();
+});
+
+export {
+  protect,
+  requireEmailVerified,
+  requireProfileComplete,
+  requirePremium,
+  requireSuperAdmin,
+  hasPremiumAccess,
+};
