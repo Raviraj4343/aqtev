@@ -24,6 +24,13 @@ const getRazorpayClient = () => {
   return new Razorpay({ key_id: keyId, key_secret: keySecret });
 };
 
+// Razorpay receipts must be <= 40 chars and URL-safe.
+const buildReceiptId = (userId) => {
+  const tail = String(userId || "").replace(/[^a-zA-Z0-9]/g, "").slice(-8) || "usr";
+  const stamp = Date.now().toString(36);
+  return `sub_${tail}_${stamp}`.slice(0, 40);
+};
+
 const toValidDate = (value) => {
   const date = value instanceof Date ? value : new Date(value);
   return Number.isNaN(date.getTime()) ? new Date() : date;
@@ -251,17 +258,28 @@ const createOrder = asyncHandler(async (req, res) => {
   }
 
   const client = getRazorpayClient();
-  const receipt = `sub_${String(user._id)}_${Date.now()}`;
-  const order = await client.orders.create({
-    amount: plan.amountPaise,
-    currency: plan.currency || "INR",
-    receipt,
-    notes: {
-      userId: String(user._id),
-      planId: String(plan._id),
-      planName: plan.name,
-    },
-  });
+  const receipt = buildReceiptId(user._id);
+
+  let order;
+  try {
+    order = await client.orders.create({
+      amount: plan.amountPaise,
+      currency: plan.currency || "INR",
+      receipt,
+      notes: {
+        userId: String(user._id),
+        planId: String(plan._id),
+        planName: plan.name,
+      },
+    });
+  } catch (err) {
+    const upstreamMessage =
+      err?.error?.description ||
+      err?.description ||
+      err?.message ||
+      "Unable to create Razorpay order.";
+    throw new ApiError(502, `Razorpay order creation failed: ${upstreamMessage}`);
+  }
 
   await SubscriptionPayment.create({
     user: user._id,
@@ -465,6 +483,36 @@ const getRevenue = asyncHandler(async (_req, res) => {
   );
 });
 
+const getMyPayments = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+
+  const payments = await SubscriptionPayment.find({ user: userId, status: "paid" })
+    .populate("plan", "name durationDays")
+    .sort({ paidAt: -1, createdAt: -1 })
+    .limit(50)
+    .lean();
+
+  const items = payments.map((entry) => ({
+    _id: entry._id,
+    amountPaise: entry.amountPaise,
+    currency: entry.currency,
+    paidAt: entry.paidAt,
+    razorpayOrderId: entry.razorpayOrderId,
+    razorpayPaymentId: entry.razorpayPaymentId,
+    plan: entry.plan || null,
+  }));
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        payments: items,
+      },
+      "Billing history fetched successfully."
+    )
+  );
+});
+
 export default {
   listPlans,
   createPlan,
@@ -475,4 +523,5 @@ export default {
   verifyPayment,
   handleRazorpayWebhook,
   getRevenue,
+  getMyPayments,
 };
