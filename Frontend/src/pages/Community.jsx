@@ -159,7 +159,7 @@ function PostComposer({ onCreate, loading, currentUser }){
   )
 }
 
-function PostCard({ post, onLike, onComment, onAuthorClick, currentUserId }){
+function PostCard({ post, onLike, onComment, onAuthorClick, onDelete, currentUserId, canModeratePosts }){
   const [comment, setComment] = useState('')
   const [submittingComment, setSubmittingComment] = useState(false)
 
@@ -221,6 +221,11 @@ function PostCard({ post, onLike, onComment, onAuthorClick, currentUserId }){
           <button type="button" className="community-action-btn" onClick={() => document.getElementById(`community-comment-${post._id}`)?.focus()}>
             Comment
           </button>
+          {canModeratePosts ? (
+            <button type="button" className="community-action-btn" onClick={() => onDelete(post._id)}>
+              Delete
+            </button>
+          ) : null}
           {String(post.author?._id || '') === String(currentUserId || '') ? <span className="community-owned-tag">Your post</span> : null}
         </div>
 
@@ -264,6 +269,7 @@ export default function Community(){
   const [error, setError] = useState('')
   const viewedRef = useRef(new Set())
   const authorFilter = searchParams.get('author') || ''
+  const canModeratePosts = user?.role === 'super_admin'
 
   const refreshPosts = async (authorId = authorFilter) => {
     setLoading(true)
@@ -328,6 +334,14 @@ export default function Community(){
     updateSinglePost(res?.data)
   }
 
+  const handleDelete = async (postId) => {
+    const shouldDelete = window.confirm('Delete this post permanently?')
+    if (!shouldDelete) return
+
+    await api.deletePost(postId)
+    setPosts((current) => current.filter((item) => item._id !== postId))
+  }
+
   const clearAuthorFilter = () => {
     setSearchParams({})
   }
@@ -384,8 +398,10 @@ export default function Community(){
               post={post}
               onLike={handleLike}
               onComment={handleComment}
+              onDelete={handleDelete}
               onAuthorClick={(authorId) => authorId && setSearchParams({ author: authorId })}
               currentUserId={user?._id}
+              canModeratePosts={canModeratePosts}
             />
           )) : (
             <Card>
