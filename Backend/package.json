@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "seed:foods": "node src/scripts/seedFoods.js",
+    "test:payments": "node scripts/testPaymentVerification.mjs",
     "ci:install": "npm ci --prefer-offline --no-audit --no-fund",
     "lint:check": "npx prettier --check \"src/**/*.js\"",
     "lint:ci": "npm run ci:install && npm run lint:check",
@@ -27,6 +28,7 @@
     "express-rate-limit": "^8.3.2",
     "express-validator": "^7.3.1",
     "helmet": "^8.1.0",
+    "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.3.3",
     "morgan": "^1.10.1",
