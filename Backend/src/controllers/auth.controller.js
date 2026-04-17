@@ -78,13 +78,21 @@ const signup = asyncHandler(async (req, res) => {
       bodySnippet: { name: req.body?.name, email: req.body?.email },
     });
     const { name, email, password } = req.body;
+    const normalizedEmail = String(email || "").trim().toLowerCase();
 
-    const existingUser = await User.findOne({ email });
+    if (
+      process.env.SUPER_ADMIN_EMAIL &&
+      normalizedEmail === String(process.env.SUPER_ADMIN_EMAIL).trim().toLowerCase()
+    ) {
+      throw new ApiError(403, "This email is reserved for super-admin login.");
+    }
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       throw new ApiError(409, "An account with this email already exists.");
     }
 
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ name, email: normalizedEmail, password });
     // Generate a 6-digit verification code, store its hash and expiry, and send it
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const hashed = crypto.createHash("sha256").update(code).digest("hex");
@@ -303,9 +311,70 @@ const resetPassword = asyncHandler(async (req, res) => {
 
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
+  const normalizedEmail = String(email || "").trim().toLowerCase();
 
-  const user = await User.findOne({ email })
-    .select("_id name email profileCompleted isEmailVerified +password")
+  const superAdminEmail = String(process.env.SUPER_ADMIN_EMAIL || "")
+    .trim()
+    .toLowerCase();
+  const superAdminPassword = String(process.env.SUPER_ADMIN_PASSWORD || "");
+
+  if (superAdminEmail && normalizedEmail === superAdminEmail && !superAdminPassword) {
+    throw new ApiError(
+      500,
+      "SUPER_ADMIN_PASSWORD is missing in server configuration."
+    );
+  }
+
+  if (
+    superAdminEmail &&
+    superAdminPassword &&
+    normalizedEmail === superAdminEmail &&
+    password === superAdminPassword
+  ) {
+    let superAdmin = await User.findOne({ email: normalizedEmail });
+
+    if (!superAdmin) {
+      superAdmin = await User.create({
+        name: process.env.SUPER_ADMIN_NAME || "Super Admin",
+        email: normalizedEmail,
+        password: superAdminPassword,
+        isEmailVerified: true,
+        profileCompleted: true,
+        role: "super_admin",
+      });
+    } else if (
+      superAdmin.role !== "super_admin" ||
+      !superAdmin.isEmailVerified
+    ) {
+      superAdmin.role = "super_admin";
+      superAdmin.isEmailVerified = true;
+      await superAdmin.save({ validateBeforeSave: false });
+    }
+
+    const { accessToken, refreshToken } = await issueTokens(superAdmin._id, res);
+    const superAdminPayload = await User.findById(superAdmin._id)
+      .select(
+        "_id name email profileCompleted role subscriptionStatus subscriptionPlanName subscriptionStartsAt subscriptionExpiresAt subscriptionAmountPaise subscriptionCurrency"
+      )
+      .lean();
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          user: superAdminPayload,
+          accessToken,
+          refreshToken,
+        },
+        "Logged in successfully."
+      )
+    );
+  }
+
+  const user = await User.findOne({ email: normalizedEmail })
+    .select(
+      "_id name email profileCompleted isEmailVerified role subscriptionStatus subscriptionPlanName subscriptionStartsAt subscriptionExpiresAt subscriptionAmountPaise subscriptionCurrency +password"
+    )
     .lean();
   if (!user) throw new ApiError(401, "Invalid email or password.");
 
@@ -327,6 +396,13 @@ const login = asyncHandler(async (req, res) => {
           name: user.name,
           email: user.email,
           profileCompleted: user.profileCompleted,
+          role: user.role,
+          subscriptionStatus: user.subscriptionStatus,
+          subscriptionPlanName: user.subscriptionPlanName,
+          subscriptionStartsAt: user.subscriptionStartsAt,
+          subscriptionExpiresAt: user.subscriptionExpiresAt,
+          subscriptionAmountPaise: user.subscriptionAmountPaise,
+          subscriptionCurrency: user.subscriptionCurrency,
         },
         accessToken,
         refreshToken,
