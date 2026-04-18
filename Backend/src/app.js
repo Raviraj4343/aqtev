@@ -4,6 +4,7 @@ import cors from "cors";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
 import hpp from "hpp";
+import mongoSanitize from "express-mongo-sanitize";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import { notFound, errorHandler } from "./middlewares/error.middleware.js";
@@ -138,6 +139,8 @@ app.post(
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cookieParser());
+// Remove MongoDB query operators from untrusted input to reduce NoSQL injection risk.
+app.use(mongoSanitize());
 app.use(hpp());
 
 // ── Logging ────────────────────────────────────────────

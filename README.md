@@ -8,7 +8,7 @@ FitCek is a full-stack health tracking platform focused on practical daily use: 
 ![Framework](https://img.shields.io/badge/Framework-Express-000000?logo=express&logoColor=white)
 ![Database](https://img.shields.io/badge/Database-MongoDB-47A248?logo=mongodb&logoColor=white)
 ![Payments](https://img.shields.io/badge/Payments-Razorpay-0C2451)
-![Security](https://img.shields.io/badge/Security-RateLimit%2BHPP-2E7D32)
+![Security](https://img.shields.io/badge/Security-Helmet%2BRateLimit%2BHPP%2BMongoSanitize-2E7D32)
 ![Auth](https://img.shields.io/badge/Auth-JWT-000000?logo=jsonwebtokens&logoColor=white)
 ![Realtime](https://img.shields.io/badge/Realtime-Socket.IO-010101?logo=socket.io&logoColor=white)
 ![ODM](https://img.shields.io/badge/ODM-Mongoose-880000?logo=mongoose&logoColor=white)
@@ -55,6 +55,7 @@ FitCek is a full-stack health tracking platform focused on practical daily use: 
   - Global limiter for API abuse protection
   - Focused auth limiter for brute-force resistance
   - Focused payment limiter for repeated payment endpoint abuse
+- Express Mongo sanitize middleware to strip MongoDB operators from incoming payloads
 - HPP middleware to mitigate HTTP parameter pollution
 - Razorpay signature verification for both checkout verification and webhooks
 
