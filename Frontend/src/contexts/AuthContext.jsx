@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import * as api from '../utils/api'
 
 const AuthContext = createContext(null)
+const PUBLIC_ENTRY_PATHS = new Set(['/', '/signin', '/signup', '/forgot', '/reset-password', '/verify-email', '/auth', '/guest-nutrition-check'])
 
 export function AuthProvider({ children }){
   const [user, setUser] = useState(null)
@@ -10,25 +11,45 @@ export function AuthProvider({ children }){
 
   const load = async () => {
     setLoading(true)
-    try{
-      const res = await api.getMe()
-      setUser(res?.data || null)
-    }catch(err){
+    const storedToken = api.readToken?.()
+
+    if (storedToken) {
       try {
-        const refreshed = await api.refreshToken()
-        if (refreshed?.data?.accessToken) {
-          api.saveToken(refreshed.data.accessToken, true)
-        }
-        const me = await api.getMe(refreshed?.data?.accessToken)
+        const me = await api.getMe(storedToken)
         setUser(me?.data || null)
-      } catch (_refreshErr) {
-        setUser(null)
+        return
+      } catch (_meErr) {
+        // fall through to refresh path
       }
-    }finally{ setLoading(false) }
+    }
+
+    try {
+      const refreshed = await api.refreshToken()
+      if (refreshed?.data?.accessToken) {
+        api.saveToken(refreshed.data.accessToken, true)
+      }
+      const me = await api.getMe(refreshed?.data?.accessToken)
+      setUser(me?.data || null)
+    } catch (_refreshErr) {
+      try { api.clearToken?.() } catch {}
+      setUser(null)
+    } finally { setLoading(false) }
   }
 
   useEffect(()=>{
     api.prewarmBackend?.().catch(()=>{})
+
+    const path = typeof window !== 'undefined' ? window.location.pathname : ''
+    const hasStoredToken = Boolean(api.readToken?.())
+    const hasRememberedIdentity = Boolean(api.readRememberedUser?.()?.email)
+    const isPublicEntry = PUBLIC_ENTRY_PATHS.has(path)
+
+    // On public entry routes with no auth hints, skip boot auth round-trips.
+    if (!hasStoredToken && !hasRememberedIdentity && isPublicEntry) {
+      setLoading(false)
+      return
+    }
+
     load()
   }, [])
 

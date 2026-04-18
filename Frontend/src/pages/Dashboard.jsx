@@ -153,7 +153,7 @@ export default function Dashboard(){
         const [res, todayRes, postsRes] = await Promise.all([
           api.getHealthStats(),
           api.getTodayInsight().catch(() => null),
-          api.getPosts().catch(() => null)
+          api.getPosts({ lightweight: 1, limit: 12 }).catch(() => null)
         ])
         if (!mounted) return
 

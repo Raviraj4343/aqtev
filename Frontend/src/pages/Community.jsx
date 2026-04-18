@@ -466,15 +466,14 @@ export default function Community(){
   }, [user])
 
   useEffect(() => {
-    const pending = posts.filter((post) => post?._id && !viewedRef.current.has(post._id))
+    const pending = posts
+      .filter((post) => post?._id && !viewedRef.current.has(post._id))
+      .slice(0, 8)
+
     pending.forEach((post) => {
       viewedRef.current.add(post._id)
       api.recordPostView(post._id)
-        .then((res) => {
-          const updated = res?.data
-          if (!updated?._id) return
-          setPosts((current) => current.map((item) => (item._id === updated._id ? updated : item)))
-        })
+        .then(() => {})
         .catch(() => {})
     })
   }, [posts])

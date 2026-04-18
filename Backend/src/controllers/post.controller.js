@@ -108,11 +108,16 @@ const removeImageFromCloudinary = async (publicId) => {
   }).catch(() => {});
 };
 
-const populatePostQuery = (query) =>
-  query.populate("author", "name avatarUrl goal activityLevel dietPreference").populate(
-    "comments.author",
-    "name avatarUrl"
+const populatePostQuery = (query, { lightweight = false } = {}) => {
+  const withAuthor = query.populate(
+    "author",
+    "name avatarUrl goal activityLevel dietPreference"
   );
+
+  if (lightweight) return withAuthor;
+
+  return withAuthor.populate("comments.author", "name avatarUrl");
+};
 
 const toPostPayload = (post, currentUserId) => {
   const payload = post.toObject({ versionKey: false });
@@ -131,12 +136,23 @@ const toPostPayload = (post, currentUserId) => {
 const listPosts = asyncHandler(async (req, res) => {
   const { author } = req.query;
   const filter = {};
+  const parsedLimit = Number.parseInt(String(req.query?.limit || "40"), 10);
+  const limit = Number.isFinite(parsedLimit)
+    ? Math.min(Math.max(parsedLimit, 1), 40)
+    : 40;
+  const lightweight =
+    String(req.query?.lightweight || "").trim() === "1" ||
+    String(req.query?.preview || "").trim() === "1";
 
   if (author) filter.author = author;
 
-  const posts = await populatePostQuery(
-    Post.find(filter).sort({ createdAt: -1 }).limit(40)
-  );
+  const baseQuery = Post.find(filter).sort({ createdAt: -1 }).limit(limit);
+
+  if (lightweight) {
+    baseQuery.select("author title description images likes viewsCount createdAt");
+  }
+
+  const posts = await populatePostQuery(baseQuery, { lightweight });
 
   return res.status(200).json(
     new ApiResponse(

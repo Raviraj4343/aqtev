@@ -86,6 +86,7 @@ const ACCESS_TOKEN_KEY = 'fitcek_access'
 const REMEMBERED_USER_KEY = 'fitcek_remembered_user'
 const REMEMBERED_AUTH_KEY = 'fitcek_remembered_auth'
 const memoCache = new Map()
+const inflightGetRequests = new Map()
 let nativeWarmupPromise = null
 let nativeWarmupAt = 0
 
@@ -320,8 +321,24 @@ async function request(path, { method = 'GET', body, token, headers = {} } = {})
     }
   }
 
+  const normalizedMethod = String(method || 'GET').toUpperCase()
+  const inflightKey = normalizedMethod === 'GET'
+    ? `${normalizedMethod}:${url}:${init.headers.Authorization || ''}`
+    : ''
+
+  if (inflightKey) {
+    const pending = inflightGetRequests.get(inflightKey)
+    if (pending) return pending
+  }
+
   try {
-    return await runWithRetry()
+    const runner = runWithRetry()
+
+    if (inflightKey) {
+      inflightGetRequests.set(inflightKey, runner)
+    }
+
+    return await runner
   } catch (err) {
     if (method === 'GET' && [408, 429, 502, 503, 504].includes(Number(err?.status))) {
       await sleep(1200)
@@ -339,6 +356,10 @@ async function request(path, { method = 'GET', body, token, headers = {} } = {})
       throw networkError
     }
     throw err
+  } finally {
+    if (inflightKey) {
+      inflightGetRequests.delete(inflightKey)
+    }
   }
 }
 
