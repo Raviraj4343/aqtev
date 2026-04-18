@@ -3,6 +3,7 @@ import * as api from '../utils/api'
 
 const AuthContext = createContext(null)
 const PUBLIC_ENTRY_PATHS = new Set(['/', '/signin', '/signup', '/forgot', '/reset-password', '/verify-email', '/auth', '/guest-nutrition-check'])
+const AUTH_BOOT_TIMEOUT_MS = 12000
 
 export function AuthProvider({ children }){
   const [user, setUser] = useState(null)
@@ -11,29 +12,33 @@ export function AuthProvider({ children }){
 
   const load = async () => {
     setLoading(true)
-    const storedToken = api.readToken?.()
-
-    if (storedToken) {
-      try {
-        const me = await api.getMe(storedToken)
-        setUser(me?.data || null)
-        return
-      } catch (_meErr) {
-        // fall through to refresh path
-      }
-    }
-
     try {
-      const refreshed = await api.refreshToken()
-      if (refreshed?.data?.accessToken) {
-        api.saveToken(refreshed.data.accessToken, true)
+      const storedToken = api.readToken?.()
+
+      if (storedToken) {
+        try {
+          const me = await api.getMe(storedToken, { timeoutMs: AUTH_BOOT_TIMEOUT_MS, skipGetRetry: true })
+          setUser(me?.data || null)
+          return
+        } catch (_meErr) {
+          // fall through to refresh path
+        }
       }
-      const me = await api.getMe(refreshed?.data?.accessToken)
-      setUser(me?.data || null)
-    } catch (_refreshErr) {
-      try { api.clearToken?.() } catch {}
-      setUser(null)
-    } finally { setLoading(false) }
+
+      try {
+        const refreshed = await api.refreshToken({ timeoutMs: AUTH_BOOT_TIMEOUT_MS })
+        if (refreshed?.data?.accessToken) {
+          api.saveToken(refreshed.data.accessToken, true)
+        }
+        const me = await api.getMe(refreshed?.data?.accessToken, { timeoutMs: AUTH_BOOT_TIMEOUT_MS, skipGetRetry: true })
+        setUser(me?.data || null)
+      } catch (_refreshErr) {
+        try { api.clearToken?.() } catch {}
+        setUser(null)
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(()=>{
@@ -106,7 +111,7 @@ export function AuthProvider({ children }){
 
     // 1) Try existing access token/cookie session first.
     try {
-      const meRes = await api.getMe()
+      const meRes = await api.getMe(undefined, { timeoutMs: AUTH_BOOT_TIMEOUT_MS, skipGetRetry: true })
       const meUser = meRes?.data || null
       if (sameEmail(meUser)) {
         setUser(meUser)
@@ -116,12 +121,12 @@ export function AuthProvider({ children }){
 
     // 2) Try refresh-token session and then hydrate /me.
     try {
-      const refreshed = await api.refreshToken()
+      const refreshed = await api.refreshToken({ timeoutMs: AUTH_BOOT_TIMEOUT_MS })
       if (refreshed?.data?.accessToken) {
         api.saveToken(refreshed.data.accessToken, true)
       }
 
-      const meRes = await api.getMe(refreshed?.data?.accessToken)
+      const meRes = await api.getMe(refreshed?.data?.accessToken, { timeoutMs: AUTH_BOOT_TIMEOUT_MS, skipGetRetry: true })
       const meUser = meRes?.data || null
       if (sameEmail(meUser)) {
         setUser(meUser)

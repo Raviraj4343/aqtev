@@ -230,7 +230,7 @@ export function normalizeUser(user){
   }
 }
 
-async function request(path, { method = 'GET', body, token, headers = {} } = {}){
+async function request(path, { method = 'GET', body, token, headers = {}, timeoutMs = REQUEST_TIMEOUT_MS, skipGetRetry = false } = {}){
   const apiBase = getApiBase()
   const url = `${apiBase}${path}`
 
@@ -271,8 +271,8 @@ async function request(path, { method = 'GET', body, token, headers = {} } = {})
         method,
         headers: init.headers,
         data: body,
-        connectTimeout: REQUEST_TIMEOUT_MS,
-        readTimeout: REQUEST_TIMEOUT_MS,
+        connectTimeout: timeoutMs,
+        readTimeout: timeoutMs,
       })
       const data = parseDataPayload(res?.data)
       if (!res || res.status < 200 || res.status >= 300) {
@@ -290,7 +290,7 @@ async function request(path, { method = 'GET', body, token, headers = {} } = {})
 
   const runWebRequest = async () => {
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
     try {
       const res = await fetch(url, { ...init, signal: controller.signal })
       const data = await res.json().catch(()=>null)
@@ -340,7 +340,7 @@ async function request(path, { method = 'GET', body, token, headers = {} } = {})
 
     return await runner
   } catch (err) {
-    if (method === 'GET' && [408, 429, 502, 503, 504].includes(Number(err?.status))) {
+    if (!skipGetRetry && method === 'GET' && [408, 429, 502, 503, 504].includes(Number(err?.status))) {
       await sleep(1200)
       return runRequest()
     }
@@ -398,12 +398,12 @@ export function logout(){
   return request('/auth/logout', { method: 'POST' })
 }
 
-export function refreshToken(){
-  return request('/auth/refresh-token', { method: 'POST' })
+export function refreshToken(options = {}){
+  return request('/auth/refresh-token', { method: 'POST', ...options })
 }
 
-export function getMe(token){
-  return request('/auth/me', { method: 'GET', token }).then((res) => ({
+export function getMe(token, options = {}){
+  return request('/auth/me', { method: 'GET', token, ...options }).then((res) => ({
     ...res,
     data: normalizeUser(res?.data)
   }))
