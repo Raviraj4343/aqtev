@@ -83,7 +83,7 @@ FitCek is a full-stack health tracking platform focused on practical daily use: 
 ### 1. Install dependencies
 
 ```bash
-git clone <your-repo-url> fitcek
+git clone https://github.com/Raviraj4343/fitcek.git
 cd fitcek
 
 cd Backend
@@ -101,7 +101,7 @@ Create Backend/.env:
 NODE_ENV=development
 PORT=8000
 
-MONGODB_URI=mongodb://127.0.0.1:27017/healthtracker
+MONGODB_URI=mongodb://127.0.0.1:27017/fitcek
 
 ACCESS_TOKEN_SECRET=change-me-access
 REFRESH_TOKEN_SECRET=change-me-refresh
@@ -125,8 +125,8 @@ CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 
-RAZORPAY_KEY_ID=
-RAZORPAY_KEY_SECRET=
+RAZORPAY_KEY_ID=your_key_id
+RAZORPAY_KEY_SECRET=your_key_secret
 
 SUPER_ADMIN_EMAIL=super-admin@example.com
 SUPER_ADMIN_PASSWORD=change-me-super-admin
