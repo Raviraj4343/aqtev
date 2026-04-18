@@ -26,7 +26,7 @@ const Subscriptions = lazy(() => import('./pages/Subscriptions'))
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth()
-  if (loading) return null
+  if (loading) return <RouteLoader />
   if (!user) return <Navigate to="/" replace />
   return children
 }
@@ -41,7 +41,7 @@ function hasPremiumAccess(user) {
 
 function RequirePremium({ children }) {
   const { user, loading } = useAuth()
-  if (loading) return null
+  if (loading) return <RouteLoader />
   if (!user) return <Navigate to="/signin" replace />
   if (!hasPremiumAccess(user)) return <Navigate to="/subscriptions?required=1" replace />
   return children
@@ -49,7 +49,7 @@ function RequirePremium({ children }) {
 
 function RequireSuperAdmin({ children }) {
   const { user, loading } = useAuth()
-  if (loading) return null
+  if (loading) return <RouteLoader />
   if (!user) return <Navigate to="/signin" replace />
   if (user.role !== 'super_admin') return <Navigate to="/dashboard" replace />
   return children

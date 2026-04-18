@@ -117,17 +117,6 @@ const globalLimiter = rateLimit({
   },
 });
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: "Too many auth attempts. Please wait 15 minutes.",
-  },
-});
-
 // Razorpay webhook must read raw body for signature verification.
 app.post(
   `${API}/subscriptions/webhook/razorpay`,
@@ -179,8 +168,10 @@ app.get("/health", (_req, res) => {
 });
 
 // ── API Routes ─────────────────────────────────────────
-// Add auth limiter at route group level to reduce brute-force surface.
-app.use(`${API}/auth`, authLimiter, authRoutes);
+// Keep route-level auth limiting only on sensitive endpoints (e.g. login).
+// Limiting the whole /auth group can block /auth/me and /auth/refresh-token,
+// which breaks session bootstrap on deployed clients.
+app.use(`${API}/auth`, authRoutes);
 // Dev-only helpers
 app.use(`${API}/dev`, devRoutes);
 // Apply global limiter to all non-auth routes (avoid throttling auth endpoints like /me during development)

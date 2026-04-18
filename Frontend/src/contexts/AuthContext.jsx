@@ -78,19 +78,6 @@ export function AuthProvider({ children }){
       setRememberedUser(null)
     }
 
-    // Hydrate full profile in background to enrich fields when available.
-    api.getMe(res?.data?.accessToken)
-      .then((me) => {
-        const hydrated = me?.data || null
-        if (!hydrated) return
-        setUser(hydrated)
-        if (persistSession) {
-          api.saveRememberedUser(hydrated)
-          setRememberedUser(api.readRememberedUser())
-        }
-      })
-      .catch(() => {})
-
     return res
   }
 
