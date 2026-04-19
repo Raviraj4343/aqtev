@@ -120,7 +120,10 @@ const populatePostQuery = (query, { lightweight = false } = {}) => {
 };
 
 const toPostPayload = (post, currentUserId) => {
-  const payload = post.toObject({ versionKey: false });
+  const payload =
+    typeof post?.toObject === "function"
+      ? post.toObject({ versionKey: false })
+      : { ...post };
   const normalizedCurrentUserId = String(currentUserId || "");
 
   return {
@@ -152,7 +155,7 @@ const listPosts = asyncHandler(async (req, res) => {
     baseQuery.select("author title description images likes viewsCount createdAt");
   }
 
-  const posts = await populatePostQuery(baseQuery, { lightweight });
+  const posts = await populatePostQuery(baseQuery, { lightweight }).lean();
 
   return res.status(200).json(
     new ApiResponse(
@@ -274,6 +277,31 @@ const recordView = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, toPostPayload(post, req.user._id), "Post view recorded."));
 });
 
+const recordViewsBulk = asyncHandler(async (req, res) => {
+  const postIds = Array.isArray(req.body?.postIds)
+    ? [...new Set(req.body.postIds.map((value) => String(value || "").trim()).filter(Boolean))]
+    : [];
+
+  if (!postIds.length) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { updated: 0 }, "No post views to record."));
+  }
+
+  const result = await Post.updateMany(
+    { _id: { $in: postIds } },
+    { $inc: { viewsCount: 1 } }
+  );
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      { updated: Number(result?.modifiedCount || 0) },
+      "Post views recorded."
+    )
+  );
+});
+
 const deletePost = asyncHandler(async (req, res) => {
   if (req.user?.role !== "super_admin") {
     throw new ApiError(403, "Only super-admin can delete posts.");
@@ -299,5 +327,6 @@ export default {
   toggleLike,
   addComment,
   recordView,
+  recordViewsBulk,
   deletePost,
 };

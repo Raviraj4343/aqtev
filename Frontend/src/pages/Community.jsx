@@ -470,12 +470,15 @@ export default function Community(){
       .filter((post) => post?._id && !viewedRef.current.has(post._id))
       .slice(0, 8)
 
+    if (!pending.length) return
+
     pending.forEach((post) => {
       viewedRef.current.add(post._id)
-      api.recordPostView(post._id)
-        .then(() => {})
-        .catch(() => {})
     })
+
+    api.recordPostViews(pending.map((post) => post._id))
+      .then(() => {})
+      .catch(() => {})
   }, [posts])
 
   useEffect(() => {

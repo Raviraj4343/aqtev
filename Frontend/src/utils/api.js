@@ -89,6 +89,8 @@ const memoCache = new Map()
 const inflightGetRequests = new Map()
 let nativeWarmupPromise = null
 let nativeWarmupAt = 0
+let webWarmupPromise = null
+let webWarmupAt = 0
 
 const memoGet = (key) => {
   const entry = memoCache.get(key)
@@ -180,12 +182,24 @@ export function prewarmBackend(){
     return ensureNativeBackendWarm(apiBase)
   }
 
+  if (Date.now() - webWarmupAt < NATIVE_WARMUP_TTL_MS) {
+    return webWarmupPromise || Promise.resolve()
+  }
+
+  if (webWarmupPromise) return webWarmupPromise
+
   const healthUrl = getHealthUrl(apiBase)
   if (!healthUrl) return Promise.resolve()
 
-  return fetch(healthUrl, { method: 'GET' })
+  webWarmupPromise = fetch(healthUrl, { method: 'GET' })
     .then(() => undefined)
     .catch(() => undefined)
+    .finally(() => {
+      webWarmupAt = Date.now()
+      webWarmupPromise = null
+    })
+
+  return webWarmupPromise
 }
 
 function getApiBase(){
@@ -497,6 +511,10 @@ export function getHealthStats(){
   return request('/user/stats')
 }
 
+export function getDashboardSummary(){
+  return request('/user/dashboard-summary')
+}
+
 // Daily Logs
 export function getTodayLog(){
   return request('/dailyLog/today')
@@ -736,6 +754,10 @@ export function recordPostView(postId){
   return request(`/posts/${encodeURIComponent(postId)}/view`, { method: 'POST' })
 }
 
+export function recordPostViews(postIds = []){
+  return request('/posts/views', { method: 'POST', body: { postIds } })
+}
+
 export function deletePost(postId){
   return request(`/posts/${encodeURIComponent(postId)}`, { method: 'DELETE' })
 }
@@ -894,6 +916,7 @@ export default {
   setupProfile,
   updateProfile,
   getHealthStats,
+  getDashboardSummary,
   // daily
   getTodayLog,
   getHistoryLogs,
@@ -921,6 +944,7 @@ export default {
   togglePostLike,
   addPostComment,
   recordPostView,
+  recordPostViews,
   deletePost,
   getSubscriptionPlans,
   createSubscriptionPlan,

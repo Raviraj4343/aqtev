@@ -9,6 +9,7 @@ router.use(protect, requireEmailVerified);
 
 router.get("/", postController.listPosts);
 router.post("/", postController.imageUpload.array("images", POST_IMAGES_UPLOAD_LIMIT), postController.createPost);
+router.post("/views", postController.recordViewsBulk);
 router.post("/:postId/like", postController.toggleLike);
 router.post("/:postId/comment", postController.addComment);
 router.post("/:postId/view", postController.recordView);

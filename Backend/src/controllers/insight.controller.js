@@ -307,7 +307,7 @@ const getActionPlan = asyncHandler(async (req, res) => {
     user.heightCm
   );
   const requiredCalories = calculateDailyCalories({
-    ...user.toObject(),
+    ...(typeof user?.toObject === "function" ? user.toObject() : user),
     goal: activeGoal,
   });
   const requiredProtein = calculateDailyProtein(user.weightKg, activeGoal);
@@ -411,7 +411,7 @@ const getLiveSuggestion = asyncHandler(async (req, res) => {
     user.heightCm
   );
   const requiredCalories = calculateDailyCalories({
-    ...user.toObject(),
+    ...(typeof user?.toObject === "function" ? user.toObject() : user),
     goal: activeGoal,
   });
   const requiredProtein = calculateDailyProtein(user.weightKg, activeGoal);

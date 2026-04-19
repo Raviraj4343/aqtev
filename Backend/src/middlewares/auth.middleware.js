@@ -29,7 +29,11 @@ const protect = asyncHandler(async (req, _res, next) => {
     throw new ApiError(401, "Invalid or expired token. Please log in again.");
   }
 
-  const user = await User.findById(decoded._id);
+  const user = await User.findById(decoded._id)
+    .select(
+      "_id name email isEmailVerified profileCompleted role avatarUrl avatarPublicId age gender heightCm weightKg bodyFatPercent goal activityLevel dietPreference subscriptionStatus subscriptionPlanId subscriptionPlanName subscriptionStartsAt subscriptionExpiresAt subscriptionAmountPaise subscriptionCurrency createdAt updatedAt"
+    )
+    .lean();
   if (!user) {
     throw new ApiError(401, "User no longer exists.");
   }
@@ -41,7 +45,10 @@ const protect = asyncHandler(async (req, _res, next) => {
     user.subscriptionExpiresAt.getTime() <= Date.now()
   ) {
     user.subscriptionStatus = "expired";
-    await user.save({ validateBeforeSave: false });
+    await User.updateOne(
+      { _id: user._id, subscriptionStatus: "active" },
+      { $set: { subscriptionStatus: "expired" } }
+    );
   }
 
   req.user = user;

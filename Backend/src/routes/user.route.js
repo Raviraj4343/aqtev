@@ -7,6 +7,7 @@ const {
   setupProfile,
   updateProfile,
   getHealthStats,
+  getDashboardSummary,
   uploadAvatar,
 } = userController;
 import {
@@ -53,5 +54,6 @@ router.post("/profile", profileValidation, validate, setupProfile);
 router.put("/profile", updateProfile);
 router.post("/profile/avatar", uploadAvatar);
 router.get("/stats", getHealthStats);
+router.get("/dashboard-summary", getDashboardSummary);
 
 export default router;

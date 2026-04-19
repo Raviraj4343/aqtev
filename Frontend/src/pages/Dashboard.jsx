@@ -33,11 +33,6 @@ const formatValue = (value, suffix = '') => {
   return `${value}${suffix}`
 }
 
-const waterToLiters = (value) => {
-  const map = { '<1L': 0.8, '1-2L': 1.5, '2-3L': 2.5, '3L+': 3.2 }
-  return map[value] ?? null
-}
-
 const formatCount = (value = 0, label, pluralize = true) => `${value} ${label}${pluralize && value !== 1 ? 's' : ''}`
 
 const formatRelativeDate = (value, isHindi) => {
@@ -58,13 +53,6 @@ const formatRelativeDate = (value, isHindi) => {
   if (diffDays < 7) return isHindi ? `${diffDays}दिन पहले` : `${diffDays}d ago`
 
   return date.toLocaleDateString()
-}
-
-const getPostFameScore = (post = {}) => {
-  const likes = Number(post.likeCount || 0)
-  const comments = Number(post.commentCount || 0)
-  const views = Number(post.viewsCount || 0)
-  return likes * 5 + comments * 4 + views
 }
 
 const getAuthorPills = (author = {}, isHindi = false) => {
@@ -88,6 +76,16 @@ const getAuthorPills = (author = {}, isHindi = false) => {
   return [goalMap[author.goal], activityMap[author.activityLevel], dietMap[author.dietPreference]].filter(Boolean)
 }
 
+const EMPTY_SUMMARY = {
+  averageCalories: null,
+  averageProtein: null,
+  averageSleepHours: null,
+  averageWaterLiters: null,
+  averageFiber: null,
+  averageSteps: null,
+  loggedDays: 0
+}
+
 export default function Dashboard(){
   const { language } = useLanguage()
   const isHindi = language === 'hi'
@@ -99,94 +97,32 @@ export default function Dashboard(){
   const [boostFoodsByNutrient, setBoostFoodsByNutrient] = useState({})
   const [boostLoading, setBoostLoading] = useState(false)
   const [boostError, setBoostError] = useState('')
-  const [summaryRows, setSummaryRows] = useState([])
+  const [summaryRows, setSummaryRows] = useState(EMPTY_SUMMARY)
   const [featuredPost, setFeaturedPost] = useState(null)
-
-  const buildSummaryRows = (logs = []) => {
-    const loggedDays = logs.length
-    const avgCalories = loggedDays
-      ? Math.round(logs.reduce((sum, log) => sum + Number(log?.totalCalories || 0), 0) / loggedDays)
-      : 0
-    const avgProtein = loggedDays
-      ? Math.round(logs.reduce((sum, log) => sum + Number(log?.totalProtein || 0), 0) / loggedDays)
-      : 0
-    const avgFiber = loggedDays
-      ? Math.round(logs.reduce((sum, log) => sum + Number(log?.totalFiber || 0), 0) / loggedDays)
-      : 0
-
-    const waterValues = logs
-      .map((log) => waterToLiters(log?.waterIntake))
-      .filter((value) => value !== null)
-    const avgWater = waterValues.length
-      ? Math.round((waterValues.reduce((sum, value) => sum + value, 0) / waterValues.length) * 10) / 10
-      : null
-
-    const sleepValues = logs
-      .map((log) => Number(log?.sleepHours))
-      .filter((value) => Number.isFinite(value) && value > 0)
-    const avgSleep = sleepValues.length
-      ? Math.round((sleepValues.reduce((sum, value) => sum + value, 0) / sleepValues.length) * 10) / 10
-      : null
-
-    const stepValues = logs
-      .map((log) => Number(log?.steps))
-      .filter((value) => Number.isFinite(value) && value > 0)
-    const avgSteps = stepValues.length
-      ? Math.round(stepValues.reduce((sum, value) => sum + value, 0) / stepValues.length)
-      : null
-
-    return [
-      { label: isHindi ? 'औसत कैलोरी' : 'Average calories', note: isHindi ? 'प्रति दिन' : 'Per day', value: loggedDays ? `${avgCalories}` : '-' },
-      { label: isHindi ? 'औसत प्रोटीन' : 'Average protein', note: isHindi ? 'प्रति दिन' : 'Per day', value: loggedDays ? `${avgProtein} g` : '-' },
-      { label: isHindi ? 'औसत नींद' : 'Average sleep', note: isHindi ? 'लॉग की गई रातें' : 'Logged nights', value: avgSleep !== null ? `${avgSleep} h` : '-' },
-      { label: isHindi ? 'औसत पानी' : 'Average water', note: isHindi ? 'लॉग किए गए दिन' : 'Logged days', value: avgWater !== null ? `${avgWater} L` : '-' },
-      { label: isHindi ? 'औसत फाइबर' : 'Average fiber', note: isHindi ? 'प्रति दिन' : 'Per day', value: loggedDays ? `${avgFiber} g` : '-' },
-      { label: isHindi ? 'औसत कदम' : 'Average steps', note: isHindi ? 'लॉग किए गए दिन' : 'Logged days', value: avgSteps !== null ? `${avgSteps}` : '-' }
-    ]
-  }
 
   useEffect(() => {
     let mounted = true
 
     async function load(){
       try {
-        const [res, todayRes, postsRes] = await Promise.all([
-          api.getHealthStats(),
-          api.getTodayInsight().catch(() => null),
-          api.getPosts({ lightweight: 1, limit: 12 }).catch(() => null)
-        ])
+        const res = await api.getDashboardSummary()
         if (!mounted) return
 
         const data = res?.data || {}
-        const todayData = todayRes?.data?.today || {}
+        const statsData = data?.stats || {}
+        const todayData = data?.today || {}
 
         setStats({
-          bmi: data.bmi ?? null,
-          requiredCalories: data.requiredCalories ?? null,
-          requiredProtein: data.requiredProtein ?? null
+          bmi: statsData.bmi ?? null,
+          requiredCalories: statsData.requiredCalories ?? null,
+          requiredProtein: statsData.requiredProtein ?? null
         })
         setToday({
           calories: todayData.calories ?? 0,
           protein: todayData.protein ?? 0
         })
-
-        const posts = Array.isArray(postsRes?.data) ? postsRes.data : []
-        const topPost = posts.length
-          ? [...posts]
-            .sort((a, b) => {
-              const scoreDiff = getPostFameScore(b) - getPostFameScore(a)
-              if (scoreDiff !== 0) return scoreDiff
-              return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-            })[0]
-          : null
-        setFeaturedPost(topPost)
-        setLoading(false)
-
-        const historyRes = await api.getHistoryLogs({ days: 7, summary: 1 }).catch(() => null)
-        if (!mounted) return
-
-        const logs = Array.isArray(historyRes?.data) ? historyRes.data : []
-        setSummaryRows(buildSummaryRows(logs))
+        setSummaryRows(data?.summary || EMPTY_SUMMARY)
+        setFeaturedPost(data?.featuredPost || null)
       } catch {
         // keep graceful empty state
       } finally {
@@ -196,7 +132,7 @@ export default function Dashboard(){
 
     load()
     return () => { mounted = false }
-  }, [isHindi])
+  }, [])
 
   const metricCards = [
     {
@@ -269,7 +205,15 @@ export default function Dashboard(){
   const boostFoods = activeBoostMetric?.nutrient
     ? (boostFoodsByNutrient[activeBoostMetric.nutrient] || [])
     : []
-  const visibleSummaryRows = summaryRows.length ? summaryRows : buildSummaryRows([])
+
+  const visibleSummaryRows = [
+    { label: isHindi ? 'औसत कैलोरी' : 'Average calories', note: isHindi ? 'प्रति दिन' : 'Per day', value: summaryRows.loggedDays ? `${summaryRows.averageCalories}` : '-' },
+    { label: isHindi ? 'औसत प्रोटीन' : 'Average protein', note: isHindi ? 'प्रति दिन' : 'Per day', value: summaryRows.loggedDays ? `${summaryRows.averageProtein} g` : '-' },
+    { label: isHindi ? 'औसत नींद' : 'Average sleep', note: isHindi ? 'लॉग की गई रातें' : 'Logged nights', value: summaryRows.averageSleepHours !== null ? `${summaryRows.averageSleepHours} h` : '-' },
+    { label: isHindi ? 'औसत पानी' : 'Average water', note: isHindi ? 'लॉग किए गए दिन' : 'Logged days', value: summaryRows.averageWaterLiters !== null ? `${summaryRows.averageWaterLiters} L` : '-' },
+    { label: isHindi ? 'औसत फाइबर' : 'Average fiber', note: isHindi ? 'प्रति दिन' : 'Per day', value: summaryRows.loggedDays ? `${summaryRows.averageFiber} g` : '-' },
+    { label: isHindi ? 'औसत कदम' : 'Average steps', note: isHindi ? 'लॉग किए गए दिन' : 'Logged days', value: summaryRows.averageSteps !== null ? `${summaryRows.averageSteps}` : '-' }
+  ]
 
   return (
     <div className="page dashboard dashboard-page">
@@ -398,26 +342,25 @@ export default function Dashboard(){
 
         <div className="dashboard-right-rail">
           <Card className="subs-card dashboard-panel dashboard-profile-panel dashboard-summary-rail-card">
-          <div className="dashboard-panel-header">
-            <div>
-              <h3>{isHindi ? 'सारांश' : 'Summary'}</h3>
-              <p className="muted">{isHindi ? 'दाहिनी ओर एक कॉम्पैक्ट स्नैपशॉट।' : 'A compact snapshot on the right side.'}</p>
-            </div>
-          </div>
-
-          <div className="dashboard-summary-list dashboard-summary-metric-list dashboard-summary-compact-list">
-            {visibleSummaryRows.map((row) => (
-              <div className="dashboard-summary-item dashboard-summary-metric" key={row.label}>
-                <div>
-                  <strong>{row.label}</strong>
-                  <span>{row.note}</span>
-                </div>
-                <em>{row.value}</em>
+            <div className="dashboard-panel-header">
+              <div>
+                <h3>{isHindi ? 'सारांश' : 'Summary'}</h3>
+                <p className="muted">{isHindi ? 'दाहिनी ओर एक कॉम्पैक्ट स्नैपशॉट।' : 'A compact snapshot on the right side.'}</p>
               </div>
-            ))}
-          </div>
-          </Card>
+            </div>
 
+            <div className="dashboard-summary-list dashboard-summary-metric-list dashboard-summary-compact-list">
+              {visibleSummaryRows.map((row) => (
+                <div className="dashboard-summary-item dashboard-summary-metric" key={row.label}>
+                  <div>
+                    <strong>{row.label}</strong>
+                    <span>{row.note}</span>
+                  </div>
+                  <em>{row.value}</em>
+                </div>
+              ))}
+            </div>
+          </Card>
         </div>
       </section>
 
