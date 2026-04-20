@@ -25,6 +25,14 @@ FitCek is a full-stack health tracking platform focused on practical daily use: 
 - Frontend: https://fitcek.vercel.com
 - Backend: https://fitcek.onrender.com
 
+## Download Android APK
+
+Download the latest Android build here:
+
+- [FitCek APK](Frontend/android/app/build/outputs/apk/debug/Fitcek%20v2.1.0.apk)
+
+If Android blocks the installation, allow installs from unknown sources for the browser or file manager you used to download the APK, then open it again.
+
 ## Core Capabilities
 
 - Authentication and account lifecycle
