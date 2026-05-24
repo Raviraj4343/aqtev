@@ -29,7 +29,7 @@ FitCek is a full-stack health tracking platform focused on practical daily use: 
 
 Download the latest Android build here:
 
-- [FitCek APK](Frontend/android/app/build/outputs/apk/debug/Fitcek%20v2.1.0.apk)
+- [FitCek APK](https://github.com/Raviraj4343/fitcek/releases/download/v2.1.0/Fitcek.v2.1.0.apk)
 
 If Android blocks the installation, allow installs from unknown sources for the browser or file manager you used to download the APK, then open it again.
 

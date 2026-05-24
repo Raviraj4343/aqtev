@@ -75,7 +75,7 @@ const sendVerificationEmail = async (
   }
 
   const payload = {
-    sender: { name: process.env.SENDER_NAME || "FitCek", email: senderEmail },
+    sender: { name: "FitCek", email: senderEmail },
     to: [{ email, name }],
     subject: "✅ Verify Your Email – FitCek",
     htmlContent,
@@ -91,6 +91,62 @@ const sendVerificationEmail = async (
   } catch (err) {
     console.error(
       "sendVerificationEmail: Brevo send failed",
+      err && (err.response || err.body || err.message || err)
+    );
+    throw err;
+  }
+};
+
+const sendPasswordResetCodeEmail = async (email, name, code) => {
+  console.log("sendemail.sendPasswordResetCodeEmail invoked", { email });
+  const logoUrl = `${process.env.CLIENT_URL || ""}/src/logo/app_logo.png`;
+  const expireCopy =
+    process.env.PASSWORD_RESET_CODE_EXPIRE_TIME || "10 minutes";
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 680px; margin: 0 auto; padding: 20px; background-color: #f6fbfa;">
+      <div style="text-align:center;padding:18px 0;">
+        <img src="${logoUrl}" alt="FitCek" style="height:56px;display:inline-block;" />
+      </div>
+      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 18px rgba(2,6,23,0.06);">
+        <h2 style="margin-top:0;color:#042827">Hi ${name},</h2>
+        <p style="color:#475e63">Use the 6-digit code below to reset your password.</p>
+        <div style="text-align:center;margin:22px 0;">
+          <div style="font-size:28px;letter-spacing:6px;background:#f0f9f8;display:inline-block;padding:14px 22px;border-radius:8px;font-weight:700;color:#013a34">${code}</div>
+        </div>
+        <p style="color:#94a3b8;font-size:13px">This code expires in ${expireCopy}.</p>
+      </div>
+    </div>
+  `;
+
+  const client = getBrevoClient();
+  if (!client) {
+    console.error("sendPasswordResetCodeEmail: BREVO_API_KEY not configured");
+    throw new Error("BREVO_API_KEY not configured — cannot send email");
+  }
+
+  const senderEmail =
+    process.env.SENDER_EMAIL && process.env.SENDER_EMAIL.trim();
+  if (!senderEmail) {
+    throw new Error("SENDER_EMAIL not configured — cannot send email");
+  }
+
+  const payload = {
+    sender: { name: "FitCek", email: senderEmail },
+    to: [{ email, name }],
+    subject: "🔐 Reset Code – FitCek",
+    htmlContent,
+  };
+
+  console.log("sendPasswordResetCodeEmail: sending via Brevo", {
+    SENDER_EMAIL: senderEmail,
+  });
+  try {
+    const resp = await client.transactionalEmails.sendTransacEmail(payload);
+    console.log("sendPasswordResetCodeEmail: Brevo accepted send");
+    return resp;
+  } catch (err) {
+    console.error(
+      "sendPasswordResetCodeEmail: Brevo send failed",
       err && (err.response || err.body || err.message || err)
     );
     throw err;
@@ -130,7 +186,7 @@ const sendPasswordResetEmail = async (email, name, token) => {
   }
 
   const payload = {
-    sender: { name: process.env.SENDER_NAME || "FitCek", email: senderEmail },
+    sender: { name: "FitCek", email: senderEmail },
     to: [{ email, name }],
     subject: "🔑 Reset Your Password – FitCek",
     htmlContent,
@@ -152,4 +208,8 @@ const sendPasswordResetEmail = async (email, name, token) => {
   }
 };
 
-export default { sendVerificationEmail, sendPasswordResetEmail };
+export default {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+  sendPasswordResetCodeEmail,
+};
