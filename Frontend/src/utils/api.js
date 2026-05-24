@@ -399,9 +399,17 @@ export function forgotPassword(email){
   return request('/auth/forgot-password', { method: 'POST', body: { email } })
 }
 
+export function requestPasswordResetCode(email){
+  return request('/auth/forgot-password-code', { method: 'POST', body: { email } })
+}
+
 export function resetPassword(token, password){
   // backend expects `token` and `newPassword` fields
   return request('/auth/reset-password', { method: 'POST', body: { token, newPassword: password } })
+}
+
+export function resetPasswordWithCode({ email, code, password }){
+  return request('/auth/reset-password-code', { method: 'POST', body: { email, code, newPassword: password } })
 }
 
 export function login({ email, password }){
@@ -903,7 +911,9 @@ export default {
   verifyCode,
   resendVerification,
   forgotPassword,
+  requestPasswordResetCode,
   resetPassword,
+  resetPasswordWithCode,
   login,
   logout,
   refreshToken,

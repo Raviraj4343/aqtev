@@ -98,6 +98,15 @@ export default function SignIn(){
     }
   }
 
+  function handleForgotClick(){
+    const trimmed = String(email || '').trim()
+    if (!trimmed) {
+      window.alert(isHindi ? 'कृपया अपना ईमेल दर्ज करें।' : 'Email is required.')
+      return
+    }
+    navigate('/forgot', { state: { email: trimmed } })
+  }
+
   return (
     <div className="auth-page-shell">
       <div className="auth-page-card auth-page-card-simple">
@@ -137,7 +146,7 @@ export default function SignIn(){
 
           <div className="auth-page-row">
             <label className="auth-page-checkbox"><input type="checkbox" checked={rememberMe} onChange={e=>setRememberMe(e.target.checked)} /> {isHindi ? 'मुझे याद रखें' : 'Remember me'}</label>
-            <Link to="/forgot" className="auth-page-link">{isHindi ? 'पासवर्ड भूल गए?' : 'Forgot password?'}</Link>
+            <button type="button" className="auth-page-link" onClick={handleForgotClick}>{isHindi ? 'पासवर्ड भूल गए?' : 'Forgot password?'}</button>
           </div>
 
           <Button type="submit" className="btn-primary auth-submit-btn" disabled={loading}>{loading ? (isHindi ? 'साइन इन हो रहा है...' : 'Signing in...') : (isHindi ? 'साइन इन' : 'Sign in')}</Button>

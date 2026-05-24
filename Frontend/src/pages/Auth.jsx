@@ -27,6 +27,15 @@ export default function Auth(){
     import('./Dashboard').catch(()=>{})
   }, [])
 
+  function handleForgotClick(){
+    const trimmed = String(email || '').trim()
+    if (!trimmed) {
+      window.alert(isHindi ? 'कृपया अपना ईमेल दर्ज करें।' : 'Email is required.')
+      return
+    }
+    navigate('/forgot', { state: { email: trimmed } })
+  }
+
   return (
     <div className="auth-root">
       <div className="auth-split">
@@ -72,7 +81,7 @@ export default function Auth(){
 
             <div className="actions">
               <label className="checkbox"><input type="checkbox" /> {isHindi ? 'मुझे याद रखें' : 'Remember me'}</label>
-              <Link to="/forgot" className="muted-link">{isHindi ? 'भूल गए?' : 'Forgot?'}</Link>
+              <button type="button" className="muted-link" onClick={handleForgotClick}>{isHindi ? 'भूल गए?' : 'Forgot?'}</button>
             </div>
 
             {error && <div style={{color:'#b91c1c',marginBottom:8}}>{error}</div>}
