@@ -5,8 +5,10 @@ import {
   signup,
   verifyEmail,
   resendVerification,
+  forgotPasswordCode,
   forgotPassword,
   resetPassword,
+  resetPasswordWithCode,
   login,
   logout,
   refreshAccessToken,
@@ -109,6 +111,14 @@ router.post(
   resendVerification
 );
 router.post(
+  "/forgot-password-code",
+  authLimiter,
+  body("email").isEmail().withMessage("Valid email required"),
+  validate,
+  forgotPasswordCode
+);
+
+router.post(
   "/forgot-password",
   authLimiter,
   body("email").isEmail().withMessage("Valid email required"),
@@ -124,6 +134,20 @@ router.post(
     .withMessage("Password must be at least 6 characters"),
   validate,
   resetPassword
+);
+
+router.post(
+  "/reset-password-code",
+  authLimiter,
+  body("email").isEmail().withMessage("Valid email required"),
+  body("code")
+    .isLength({ min: 6, max: 6 })
+    .withMessage("Code must be 6 characters"),
+  body("newPassword")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters"),
+  validate,
+  resetPasswordWithCode
 );
 router.post("/login", authLimiter, loginValidation, validate, login);
 router.post("/logout", protect, logout);

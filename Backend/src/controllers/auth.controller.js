@@ -250,6 +250,61 @@ const resendVerification = asyncHandler(async (req, res) => {
   }
 });
 
+// Forgot password via 6-digit code
+const forgotPasswordCode = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) throw new ApiError(400, "Email is required.");
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { emailSent: false },
+          "If an account exists, a reset code has been sent."
+        )
+      );
+  }
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const hashed = crypto.createHash("sha256").update(code).digest("hex");
+  const expireMs = parseExpiryToMs(
+    process.env.PASSWORD_RESET_CODE_EXPIRE_MS ||
+      process.env.PASSWORD_RESET_CODE_EXPIRE_TIME ||
+      process.env.PASSWORD_RESET_CODE_EXPIRE_MINUTES,
+    10 * 60 * 1000
+  );
+
+  user.passwordResetToken = hashed;
+  user.passwordResetExpires = Date.now() + expireMs;
+  await user.save({ validateBeforeSave: false });
+
+  let emailSent = true;
+  try {
+    await sendemail.sendPasswordResetCodeEmail(email, user.name, code);
+  } catch (emailErr) {
+    emailSent = false;
+    console.error(
+      "forgotPasswordCode: email send failed",
+      emailErr && emailErr.stack ? emailErr.stack : emailErr
+    );
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { emailSent },
+        emailSent
+          ? "If an account exists, a reset code has been sent."
+          : "We could not send the reset code. Please try again shortly."
+      )
+    );
+});
+
 // Forgot password — generate reset token and email the user
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
@@ -265,15 +320,26 @@ const forgotPassword = asyncHandler(async (req, res) => {
   user.passwordResetExpires = Date.now() + 60 * 60 * 1000; // 1 hour
   await user.save({ validateBeforeSave: false });
 
-  await sendemail.sendPasswordResetEmail(email, user.name, resetToken);
+  let emailSent = true;
+  try {
+    await sendemail.sendPasswordResetEmail(email, user.name, resetToken);
+  } catch (emailErr) {
+    emailSent = false;
+    console.error(
+      "forgotPassword: email send failed",
+      emailErr && emailErr.stack ? emailErr.stack : emailErr
+    );
+  }
 
   return res
     .status(200)
     .json(
       new ApiResponse(
         200,
-        null,
-        "Password reset email sent if the account exists."
+        { emailSent },
+        emailSent
+          ? "Password reset email sent if the account exists."
+          : "We could not send the reset email. Please try again shortly."
       )
     );
 });
@@ -292,6 +358,44 @@ const resetPassword = asyncHandler(async (req, res) => {
 
   if (!user)
     throw new ApiError(400, "Invalid or expired password reset token.");
+
+  user.password = newPassword;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        null,
+        "Password has been reset. You can now sign in."
+      )
+    );
+});
+
+// Reset password using 6-digit code
+const resetPasswordWithCode = asyncHandler(async (req, res) => {
+  const { email, code, newPassword } = req.body;
+  if (!email || !code || !newPassword) {
+    throw new ApiError(400, "Email, code, and new password are required.");
+  }
+
+  const user = await User.findOne({ email }).select(
+    "+passwordResetToken +passwordResetExpires"
+  );
+  if (!user || !user.passwordResetToken) {
+    throw new ApiError(400, "Invalid or expired reset code.");
+  }
+  if (user.passwordResetExpires < Date.now()) {
+    throw new ApiError(400, "Reset code expired.");
+  }
+
+  const hashed = crypto.createHash("sha256").update(code).digest("hex");
+  if (user.passwordResetToken !== hashed) {
+    throw new ApiError(400, "Invalid reset code.");
+  }
 
   user.password = newPassword;
   user.passwordResetToken = undefined;
@@ -470,8 +574,10 @@ export {
   signup,
   verifyEmail,
   resendVerification,
+  forgotPasswordCode,
   forgotPassword,
   resetPassword,
+  resetPasswordWithCode,
   login,
   logout,
   refreshAccessToken,
